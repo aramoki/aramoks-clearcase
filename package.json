@@ -2,17 +2,37 @@
 	"name": "aramoks-clearcase",
 	"displayName": "Aramok's Clearcase",
 	"description": "IBM Rational Clearcase integration with Visual Studio Code",
-	"version": "0.0.1",
+	"version": "1.0.0",
 	"author": {
 		"name": "Sencer Aramok",
 		"email": "mohorame@gmail.com"
 	},
 	"publisher": "aramok",
+	"license": "SEE LICENSE IN LICENSE",
+	"homepage": "https://github.com/aramoki/aramoks-clearcase/blob/master/README.md",
+	"bugs": {
+		"url": "https://github.com/aramoki/aramoks-clearcase/issues"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/aramoki/aramoks-clearcase"
+	},
 	"engines": {
 		"vscode": "^1.39.0"
 	},
 	"categories": [
-		"Other"
+		"SCM Providers"
+	],
+	"galleryBanner": {
+		"color": "#2b2b5a",
+		"theme": "dark"
+	},
+	"keywords": [
+		"cc",
+		"clearcase",
+		"cleartool",
+		"IBM Rational",
+		"aramok"
 	],
 	"activationEvents": [
 		"*"
