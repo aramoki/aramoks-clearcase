@@ -2,12 +2,13 @@
 	"name": "aramoks-clearcase",
 	"displayName": "Aramok's Clearcase",
 	"description": "IBM Rational Clearcase integration with Visual Studio Code",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"author": {
 		"name": "Sencer Aramok",
 		"email": "mohorame@gmail.com"
 	},
 	"publisher": "aramok",
+	"icon": "images/aramoks-clearcase.png",
 	"license": "SEE LICENSE IN LICENSE",
 	"homepage": "https://github.com/aramoki/aramoks-clearcase/blob/master/README.md",
 	"bugs": {
