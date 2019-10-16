@@ -8,7 +8,8 @@ export class ClearTool {
         this.tool = "cleartool";
     }
  
-    run_command(command:String , path:String ,c_error: (exception: ExecException, val: String) => void ,std_error: (val : string) => void , std_success: (val : string) => void){
+
+    public run_command(command:String , path:String ,c_error: (exception: ExecException, val: String) => void ,std_error: (val : string) => void , std_success: (val : string) => void) : void{
         exec(this.tool + " "+ command + " " + path + "", (error, stdout, stderr) => {
             if (error) {
                 c_error(error,stderr);
@@ -21,4 +22,6 @@ export class ClearTool {
             }
         });
     }
+
+
 }
