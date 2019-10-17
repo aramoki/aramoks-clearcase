@@ -153,7 +153,6 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('extension.checkout', (uri: vscode.Uri) => {
-		showMessage("test", false);
 		fileStatus.text = `$(repo-sync~spin) Checking Out...`;
 		showCommentDialog((param: String) => {
 			cleartool.run_command("co " + param, uri.fsPath, (exception, stderr) => {
