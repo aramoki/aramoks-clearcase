@@ -2,7 +2,7 @@
 	"name": "aramoks-clearcase",
 	"displayName": "Aramok's Clearcase",
 	"description": "IBM Rational Clearcase integration with Visual Studio Code",
-	"version": "1.0.10",
+	"version": "1.0.11",
 	"author": {
 		"name": "Sencer Aramok",
 		"email": "mohorame@gmail.com"
@@ -108,7 +108,7 @@
 				{
 					"command": "extension.makeelement",
 					"group": "Aramok's Commands",
-					"when": "checkin-criteria == checkout-criteria"
+					"when": "mkelem-criteria"
 				}
 			],
 			"editor/context": [
@@ -130,7 +130,7 @@
 				{
 					"command": "extension.makeelement",
 					"group": "Aramok's Commands",
-					"when": "checkin-criteria == checkout-criteria"
+					"when": "mkelem-criteria"
 				}
 			]
 		}
