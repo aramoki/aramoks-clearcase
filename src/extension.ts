@@ -82,7 +82,7 @@ function showCommentDialog(callback: (val: String) => void){
 			placeHolder: "Cannot be empty (see extension settings)"
 		}).then(value => {
 			if (value) {
-				callback( "-c " + value);
+				callback( "-c " + "\"" + value + "\"");
 				return;
 			}else{
 				return;
