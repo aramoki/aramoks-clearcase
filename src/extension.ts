@@ -65,12 +65,9 @@ function cleartoolDescribeFile(textEditor: vscode.TextEditor | undefined){
 				set_context_criteria(false, false);
 				cclog.appendLine("Describe file is private ");
 			}
-			fileStatus.show();
 		});
 	} else {
 		set_context_criteria(false, false);
-		fileStatus.hide();
-		viewStatus.hide();
 	}
 }
 
@@ -106,7 +103,7 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(fileStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0));
 	fileStatus.command = "extension.describe";
 	fileStatus.tooltip = "Refresh File Status";
-
+	fileStatus.show();
 
 
 
