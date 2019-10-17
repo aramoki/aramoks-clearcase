@@ -96,13 +96,13 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 	context.subscriptions.push(viewStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1));
-	viewStatus.tooltip = "Version info of current element"
+	viewStatus.tooltip = "Version info of current element";
 	viewStatus.text = `$(repo-sync~spin) Activating Cleartool...`;
 	viewStatus.show();
 
 	context.subscriptions.push(fileStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0));
 	fileStatus.command = "extension.describe";
-	fileStatus.tooltip = "Refresh File Status"
+	fileStatus.tooltip = "Refresh File Status";
 
 
 
