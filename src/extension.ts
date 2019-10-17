@@ -30,7 +30,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(viewStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1));
 	context.subscriptions.push(fileStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0));
-
+	fileStatus.command = "extension.describe";
 
 	//name (?<=\bby\s).*\s
 	viewStatus.text = `$(git-branch) view`;
@@ -176,6 +176,23 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 				fileStatus.show();
 			});
+		});
+	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('extension.describe', (uri: vscode.Uri) => {
+		fileStatus.text = `$(repo-sync~spin) Describe...`;
+		cleartool.run_command("describe ", uri.fsPath, (exception, stderr) => {
+			showMessage(stderr, true);
+		}, (stderr) => {
+			showMessage(stderr, true);
+		}, (stdout) => {
+			if (stdout.indexOf("CHECKEDOUT") !== -1) {
+				set_context_criteria(true, false);
+				fileStatus.text = `$(verified) Checked Out`;
+			} else {
+				set_context_criteria(false, true);
+				fileStatus.text = `$(lock) Locked`;
+			}
 		});
 	}));
 

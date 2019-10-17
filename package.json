@@ -46,19 +46,20 @@
 				"title": "Cleartool : Check-Out"
 			},
 			{
-				
 				"command": "extension.checkin",
 				"title": "Cleartool : Check-In"
 			},
 			{
-				
 				"command": "extension.undocheckout",
 				"title": "Cleartool : Undo Check-Out"
 			},
 			{
-				
 				"command": "extension.makeelement",
 				"title": "Cleartool : Make Element"
+			},
+			{
+				"command": "extension.describe",
+				"title": "Cleartool : Describe"
 			}
 		],
 		"menus": {
@@ -66,46 +67,45 @@
 				{
 					"command": "extension.checkout",
 					"group": "Aramok's Commands",
-					"when":"checkout-criteria"
+					"when": "checkout-criteria"
 				},
 				{
 					"command": "extension.checkin",
 					"group": "Aramok's Commands",
-					"when":"checkin-criteria"
+					"when": "checkin-criteria"
 				},
 				{
 					"command": "extension.undocheckout",
 					"group": "Aramok's Commands",
-					"when":"checkin-criteria"
+					"when": "checkin-criteria"
 				},
 				{
 					"command": "extension.makeelement",
 					"group": "Aramok's Commands",
-					"when":"checkin-criteria == checkout-criteria"
+					"when": "checkin-criteria == checkout-criteria"
 				}
 			],
 			"editor/context": [
 				{
 					"command": "extension.checkout",
 					"group": "Aramok's Commands",
-					"when":"checkout-criteria"
+					"when": "checkout-criteria"
 				},
 				{
 					"command": "extension.checkin",
 					"group": "Aramok's Commands",
-					"when":"checkin-criteria"
+					"when": "checkin-criteria"
 				},
 				{
 					"command": "extension.undocheckout",
 					"group": "Aramok's Commands",
-					"when":"checkin-criteria"
+					"when": "checkin-criteria"
 				},
 				{
 					"command": "extension.makeelement",
 					"group": "Aramok's Commands",
-					"when":"checkin-criteria == checkout-criteria"
+					"when": "checkin-criteria == checkout-criteria"
 				}
-
 			]
 		}
 	},
