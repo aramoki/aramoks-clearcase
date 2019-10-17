@@ -49,11 +49,6 @@ function cleartoolDescribeFile(textEditor: vscode.TextEditor | undefined){
 			if((matches = stdout.match(/(?<=version:\s\\main\\).*/)) !== null){
 				fileVersion = matches.toString();
 				viewStatus.text = `$(git-branch) ${fileVersion}`;
-			}else{
-				viewStatus.text = `$(git-branch) No Version`;
-			}
-
-			if (stdout.indexOf("version") !== -1) {
 				if (stdout.indexOf("CHECKEDOUT") !== -1) {
 					set_context_criteria(true, false);
 					fileStatus.text = `$(verified) Checked Out`;
@@ -62,6 +57,7 @@ function cleartoolDescribeFile(textEditor: vscode.TextEditor | undefined){
 					fileStatus.text = `$(lock) Locked`;
 				}
 			}else{
+				viewStatus.text = `$(git-branch) No Version`;
 				set_context_criteria(false, false);
 				cclog.appendLine("Describe file is private ");
 			}
