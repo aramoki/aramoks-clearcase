@@ -121,7 +121,7 @@ function cleartoolDescribeFile(textEditor: vscode.TextEditor | undefined) {
 			} else {
 				setContextCriteria(FileState.Private);
 				viewStatus.text = `$(git-branch) No Version`;
-				fileStatus.text = `$(lock) Locked`;
+				fileStatus.text = `$(file-code) Private File`;
 			}
 		});
 	} else {

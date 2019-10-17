@@ -4,6 +4,7 @@ All notable changes to the "aramoks-black" extension will be documented in this 
 
 ## [Unreleased]
 
+- Make element context visibility bug fixed
 - Information and Error notifications are now optional
 - Statusbar text visibility bug solved
 - Fix bug if space exist in comment input
