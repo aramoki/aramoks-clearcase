@@ -39,9 +39,11 @@ function cleartoolDescribeFile(textEditor: vscode.TextEditor | undefined){
 		cleartool.run_command("describe", textEditor.document.fileName, (exception, stderr) => {
 			set_context_criteria(false, false);
 			fileStatus.text = `$(issue-reopened) Error`;
+			viewStatus.text = `$(git-branch) No Version`;
 		}, (stderr) => {
 			set_context_criteria(false, false);
 			fileStatus.text = `$(issue-reopened) Error`;
+			viewStatus.text = `$(git-branch) No Version`;
 		}, (stdout) => {
 			
 			if((matches = stdout.match(/(?<=version:\s\\main\\).*/)) !== null){
@@ -68,6 +70,7 @@ function cleartoolDescribeFile(textEditor: vscode.TextEditor | undefined){
 	} else {
 		set_context_criteria(false, false);
 		fileStatus.hide();
+		viewStatus.hide();
 	}
 }
 

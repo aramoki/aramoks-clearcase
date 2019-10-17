@@ -4,6 +4,7 @@ All notable changes to the "aramoks-black" extension will be documented in this 
 
 ## [Unreleased]
 
+- Version status text bug fixed
 - Private files are not distinguishable
 - Shortcut for quick describe from status bar added
 - File version info fixed
