@@ -69,6 +69,7 @@ function showOpenSettings(type: String) {
 		}
 	});
 }
+
 function setContextCriteria(state: FileState) {
 	switch (state) {
 		case FileState.Locked:
@@ -97,6 +98,7 @@ function setContextCriteria(state: FileState) {
 function cleartoolDescribeFile(textEditor: vscode.TextEditor | undefined) {
 	let fileVersion: String;
 	let matches: RegExpMatchArray | null;
+	//let time: String;//fetch user too
 	if (textEditor && textEditor.document.uri.toString().startsWith("file:")) {
 		fileStatus.text = `$(repo-sync~spin) Describe...`;
 		cleartool.run_command("describe", textEditor.document.fileName, (exception, stderr) => {
@@ -114,14 +116,17 @@ function cleartoolDescribeFile(textEditor: vscode.TextEditor | undefined) {
 				if (stdout.indexOf("CHECKEDOUT") !== -1) {
 					setContextCriteria(FileState.CheckedOut);
 					fileStatus.text = `$(verified) Checked Out`;
+					//time = "(?<=created\s)(\S)*";//unix time
 				} else {
 					setContextCriteria(FileState.Locked);
 					fileStatus.text = `$(lock) Locked`;
+					//time = "(?<=checked out\s)(\S)*";//unix time
 				}
 			} else {
 				setContextCriteria(FileState.Private);
 				viewStatus.text = `$(git-branch) No Version`;
 				fileStatus.text = `$(file-code) Private File`;
+				//time = "(?<=Modified:\s).*";//file time
 			}
 		});
 	} else {
@@ -146,6 +151,21 @@ function showCommentDialog(callback: (val: String) => void) {
 	} else {
 		callback("-nc");
 		return;
+	}
+}
+//return interface!
+function datePriorToNow(now:Date):String{
+	let date = new Date();
+	date.setTime(date.getTime() - now.getTime());
+
+	if(date.getMonth() > 0){
+		return date.getMonth() + " Months ago";
+	}else if(date.getDay() > 0){
+		return date.getDay() + " Days ago";
+	}else if(date.getMinutes() > 0){
+		return date.getMinutes() + " Hours ago";
+	}else{
+		return "Now";
 	}
 }
 
