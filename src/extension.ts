@@ -2,12 +2,19 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { exec, spawn, ChildProcess } from 'child_process';
 import { ClearTool } from "./cleartool";
+import { InputBoxOptions } from 'vscode';
 
 let cleartool = new ClearTool();
 
 let cclog : vscode.OutputChannel = vscode.window.createOutputChannel("Clearcase");
 let viewStatus: vscode.StatusBarItem;
 let fileStatus: vscode.StatusBarItem;
+
+
+let options: InputBoxOptions = {
+    prompt: "Comment: ",
+    placeHolder: "(Enter your comment)"
+};
 
 function showMessage(message: String, iserror: boolean) {
 	if (iserror) {
@@ -64,6 +71,26 @@ function cleartoolDescribeFile(textEditor: vscode.TextEditor | undefined){
 	}
 }
 
+
+function showCommentDialog(callback: (val: String) => void){
+	if(vscode.workspace.getConfiguration("cleartool").get("actionCommentOptionDialog")){
+		vscode.window.showInputBox({
+			prompt: "Type Comment to Check-Out File ",
+			placeHolder: "Cannot be empty (see extension settings)"
+		}).then(value => {
+			if (value) {
+				callback( "-c " + value);
+				return;
+			}else{
+				return;
+			}
+		});
+	}else{
+		callback("-nc");
+		return;
+	}
+}
+
 export function activate(context: vscode.ExtensionContext) {
 
 
@@ -88,25 +115,29 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(vscode.commands.registerCommand('extension.checkin', (uri: vscode.Uri) => {
 		fileStatus.text = `$(repo-sync~spin) Checking In...`;
-		cleartool.run_command("ci -nc", uri.fsPath , (exception, stderr) => {
-			showMessage(stderr, true);
-		}, (stderr) => {
-			showMessage(stderr, true);
-		}, (stdout) => {
-			showMessage("Result:" + stdout, false);
-			cleartoolDescribeFile(vscode.window.activeTextEditor);
+		showCommentDialog((param:String) => {
+			cleartool.run_command("ci " + param, uri.fsPath , (exception, stderr) => {
+				showMessage(stderr, true);
+			}, (stderr) => {
+				showMessage(stderr, true);
+			}, (stdout) => {
+				showMessage("Result:" + stdout, false);
+				cleartoolDescribeFile(vscode.window.activeTextEditor);
+			});
 		});
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('extension.checkout', (uri: vscode.Uri) => {
 		fileStatus.text = `$(repo-sync~spin) Checking Out...`;
-		cleartool.run_command("co -nc", uri.fsPath , (exception, stderr) => {
-			showMessage(stderr, true);
-		}, (stderr) => {
-			showMessage(stderr, true);
-		}, (stdout) => {
-			showMessage(stdout, false);
-			cleartoolDescribeFile(vscode.window.activeTextEditor);
+		showCommentDialog((param:String) => {
+			cleartool.run_command("co " + param, uri.fsPath , (exception, stderr) => {
+				showMessage(stderr, true);
+			}, (stderr) => {
+				showMessage(stderr, true);
+			}, (stdout) => {
+				showMessage(stdout, false);
+				cleartoolDescribeFile(vscode.window.activeTextEditor);
+			});
 		});
 	}));
 
@@ -120,17 +151,20 @@ export function activate(context: vscode.ExtensionContext) {
 			showMessage(stdout, false);
 			cleartoolDescribeFile(vscode.window.activeTextEditor);
 		});
+
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('extension.makeelement', (uri: vscode.Uri) => {
 		fileStatus.text = `$(repo-sync~spin) Creating Element...`;
-		cleartool.run_command("mkelem -nc", uri.fsPath , (exception, stderr) => {
-			showMessage(stderr, true);
-		}, (stderr) => {
-			showMessage(stderr, true);
-		}, (stdout) => {
-			showMessage(stdout, false);
-			cleartoolDescribeFile(vscode.window.activeTextEditor);
+		showCommentDialog((param:String) => {
+			cleartool.run_command("mkelem " + param, uri.fsPath , (exception, stderr) => {
+				showMessage(stderr, true);
+			}, (stderr) => {
+				showMessage(stderr, true);
+			}, (stdout) => {
+				showMessage(stdout, false);
+				cleartoolDescribeFile(vscode.window.activeTextEditor);
+			});
 		});
 	}));
 

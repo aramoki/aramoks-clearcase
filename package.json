@@ -2,7 +2,7 @@
 	"name": "aramoks-clearcase",
 	"displayName": "Aramok's Clearcase",
 	"description": "IBM Rational Clearcase integration with Visual Studio Code",
-	"version": "1.0.2",
+	"version": "1.0.4",
 	"author": {
 		"name": "Sencer Aramok",
 		"email": "mohorame@gmail.com"
@@ -40,6 +40,22 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
+		"configuration": {
+			"type": "object",
+			"title": "Aramok's Clearcase",
+			"properties": {
+				"cleartool.actionCommentOptionDialog": {
+					"type": "boolean",
+					"default": false,
+					"markdownDescription": "Show comment input after cleartool action"
+				},
+				"cleartool.actionPreserveFileModificationTime": {
+					"type": "boolean",
+					"default": false,
+					"markdownDescription": "Preserve file modification time after cleartool action"
+				}
+			}
+		},
 		"commands": [
 			{
 				"command": "extension.checkout",
