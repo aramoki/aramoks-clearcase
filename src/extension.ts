@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
 import * as path from 'path';
 import { exec, spawn, ChildProcess } from 'child_process';
 import { ClearTool } from "./cleartool";
@@ -95,39 +96,62 @@ function setContextCriteria(state: FileState) {
 	}
 }
 
-function cleartoolDescribeFile(textEditor: vscode.TextEditor | undefined) {
+function realLocation(path: fs.PathLike, callback: (realFilePath: String) => void) {
+	let realFile: String;
+	fs.lstat(path, function (err, stats) {
+		if (err) {
+			//callback("\"" + path.toString() + "\"");
+		}
+		if (stats.isSymbolicLink()) {
+			fileStatus.text = `$(repo-sync~spin) Symbolic Describe...`;
+			fs.readlink(path, (err: NodeJS.ErrnoException | null, linkstring: String) => {
+				callback("\"" + linkstring + "\"");
+			});
+		} else {
+			callback("\"" + path.toString() + "\"");
+		}
+	});
+}
+
+function cleartoolDescribeRealFile(realFilePath: String) {
 	let fileVersion: String;
 	let matches: RegExpMatchArray | null;
-	//let time: String;//fetch user too
+	cleartool.run_command("describe", realFilePath, (exception, stderr) => {
+		setContextCriteria(FileState.Unknown);
+		fileStatus.text = `$(issue-reopened) Error`;
+		viewStatus.text = `$(git-branch) No Version`;
+	}, (stderr) => {
+		setContextCriteria(FileState.Unknown);
+		fileStatus.text = `$(issue-reopened) Error`;
+		viewStatus.text = `$(git-branch) No Version`;
+	}, (stdout) => {
+		if ((matches = stdout.match(/(?<=version:\s\\main\\).*/)) !== null) {
+			fileVersion = matches.toString();
+			viewStatus.text = `$(git-branch) ${fileVersion}`;
+			if (stdout.indexOf("CHECKEDOUT") !== -1) {
+				setContextCriteria(FileState.CheckedOut);
+				fileStatus.text = `$(verified) Checked Out`;
+				//time = "(?<=created\s)(\S)*";//unix time
+			} else {
+				setContextCriteria(FileState.Locked);
+				fileStatus.text = `$(lock) Locked`;
+				//time = "(?<=checked out\s)(\S)*";//unix time
+			}
+		} else {
+			setContextCriteria(FileState.Private);
+			viewStatus.text = `$(git-branch) No Version`;
+			fileStatus.text = `$(file-code) Private File`;
+			//time = "(?<=Modified:\s).*";//file time
+		}
+	});
+}
+
+function cleartoolDescribeFile(textEditor: vscode.TextEditor | undefined) {
+
 	if (textEditor && textEditor.document.uri.toString().startsWith("file:")) {
 		fileStatus.text = `$(repo-sync~spin) Describe...`;
-		cleartool.run_command("describe", textEditor.document.fileName, (exception, stderr) => {
-			setContextCriteria(FileState.Unknown);
-			fileStatus.text = `$(issue-reopened) Error`;
-			viewStatus.text = `$(git-branch) No Version`;
-		}, (stderr) => {
-			setContextCriteria(FileState.Unknown);
-			fileStatus.text = `$(issue-reopened) Error`;
-			viewStatus.text = `$(git-branch) No Version`;
-		}, (stdout) => {
-			if ((matches = stdout.match(/(?<=version:\s\\main\\).*/)) !== null) {
-				fileVersion = matches.toString();
-				viewStatus.text = `$(git-branch) ${fileVersion}`;
-				if (stdout.indexOf("CHECKEDOUT") !== -1) {
-					setContextCriteria(FileState.CheckedOut);
-					fileStatus.text = `$(verified) Checked Out`;
-					//time = "(?<=created\s)(\S)*";//unix time
-				} else {
-					setContextCriteria(FileState.Locked);
-					fileStatus.text = `$(lock) Locked`;
-					//time = "(?<=checked out\s)(\S)*";//unix time
-				}
-			} else {
-				setContextCriteria(FileState.Private);
-				viewStatus.text = `$(git-branch) No Version`;
-				fileStatus.text = `$(file-code) Private File`;
-				//time = "(?<=Modified:\s).*";//file time
-			}
+		realLocation(textEditor.document.fileName, (realFilePath: String) => {
+			cleartoolDescribeRealFile(realFilePath);
 		});
 	} else {
 		setContextCriteria(FileState.Unknown);
@@ -154,22 +178,24 @@ function showCommentDialog(callback: (val: String) => void) {
 	}
 }
 //return interface!
-function datePriorToNow(now:Date):String{
+function datePriorToNow(now: Date): String {
 	let date = new Date();
 	date.setTime(date.getTime() - now.getTime());
 
-	if(date.getMonth() > 0){
+	if (date.getMonth() > 0) {
 		return date.getMonth() + " Months ago";
-	}else if(date.getDay() > 0){
+	} else if (date.getDay() > 0) {
 		return date.getDay() + " Days ago";
-	}else if(date.getMinutes() > 0){
+	} else if (date.getMinutes() > 0) {
 		return date.getMinutes() + " Hours ago";
-	}else{
+	} else {
 		return "Now";
 	}
 }
 
 export function activate(context: vscode.ExtensionContext) {
+
+
 	context.subscriptions.push(viewStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1));
 	viewStatus.tooltip = "Version info of current element";
 	viewStatus.text = `$(repo-sync~spin) Activating Cleartool...`;
@@ -187,61 +213,68 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(vscode.commands.registerCommand('extension.checkin', (uri: vscode.Uri) => {
 		fileStatus.text = `$(repo-sync~spin) Checking In...`;
-		showCommentDialog((param: String) => {
-			cleartool.run_command("ci " + param, uri.fsPath, (exception, stderr) => {
-				showMessage(stderr, NotificationType.Error);
-			}, (stderr) => {
-				showMessage(stderr, NotificationType.Error);
-			}, (stdout) => {
-				showMessage(stdout, NotificationType.Information);
-				cleartoolDescribeFile(vscode.window.activeTextEditor);
+		realLocation(uri.fsPath, (realFilePath: String) => {
+			showCommentDialog((param: String) => {
+				cleartool.run_command("ci " + param, realFilePath, (exception, stderr) => {
+					showMessage(stderr, NotificationType.Error);
+				}, (stderr) => {
+					showMessage(stderr, NotificationType.Error);
+				}, (stdout) => {
+					showMessage(stdout, NotificationType.Information);
+					cleartoolDescribeRealFile(realFilePath);
+				});
 			});
 		});
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('extension.checkout', (uri: vscode.Uri) => {
 		fileStatus.text = `$(repo-sync~spin) Checking Out...`;
-		showCommentDialog((param: String) => {
-			cleartool.run_command("co " + param, uri.fsPath, (exception, stderr) => {
-				showMessage(stderr, NotificationType.Error);
-			}, (stderr) => {
-				showMessage(stderr, NotificationType.Error);
-			}, (stdout) => {
-				showMessage(stdout, NotificationType.Information);
-				cleartoolDescribeFile(vscode.window.activeTextEditor);
+		realLocation(uri.fsPath, (realFilePath: String) => {
+			showCommentDialog((param: String) => {
+				cleartool.run_command("co " + param, realFilePath, (exception, stderr) => {
+					showMessage(stderr, NotificationType.Error);
+				}, (stderr) => {
+					showMessage(stderr, NotificationType.Error);
+				}, (stdout) => {
+					showMessage(stdout, NotificationType.Information);
+					cleartoolDescribeRealFile(realFilePath);
+				});
 			});
 		});
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('extension.undocheckout', (uri: vscode.Uri) => {
 		fileStatus.text = `$(repo-sync~spin) Undo Check Out...`;
-		cleartool.run_command("unco -rm", uri.fsPath, (exception, stderr) => {
-			showMessage(stderr, NotificationType.Error);
-		}, (stderr) => {
-			showMessage(stderr, NotificationType.Error);
-		}, (stdout) => {
-			showMessage(stdout, NotificationType.Information);
-			cleartoolDescribeFile(vscode.window.activeTextEditor);
-		});
-
-	}));
-
-	context.subscriptions.push(vscode.commands.registerCommand('extension.makeelement', (uri: vscode.Uri) => {
-		fileStatus.text = `$(repo-sync~spin) Creating Element...`;
-		showCommentDialog((param: String) => {
-			cleartool.run_command("mkelem " + param, uri.fsPath, (exception, stderr) => {
+		realLocation(uri.fsPath, (realFilePath: String) => {
+			cleartool.run_command("unco -rm", realFilePath, (exception, stderr) => {
 				showMessage(stderr, NotificationType.Error);
 			}, (stderr) => {
 				showMessage(stderr, NotificationType.Error);
 			}, (stdout) => {
 				showMessage(stdout, NotificationType.Information);
-				cleartoolDescribeFile(vscode.window.activeTextEditor);
+				cleartoolDescribeRealFile(realFilePath);
+			});
+		});
+	}));
+
+	context.subscriptions.push(vscode.commands.registerCommand('extension.makeelement', (uri: vscode.Uri) => {
+		fileStatus.text = `$(repo-sync~spin) Creating Element...`;
+		realLocation(uri.fsPath, (realFilePath: String) => {
+			showCommentDialog((param: String) => {
+				cleartool.run_command("mkelem " + param, realFilePath, (exception, stderr) => {
+					showMessage(stderr, NotificationType.Error);
+				}, (stderr) => {
+					showMessage(stderr, NotificationType.Error);
+				}, (stdout) => {
+					showMessage(stdout, NotificationType.Information);
+					cleartoolDescribeRealFile(realFilePath);
+				});
 			});
 		});
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('extension.describe', () => {
-		fileStatus.text = `$(repo-sync~spin) Describe...`;
+		fileStatus.text = `$(repo-sync~spin) Initialise...`;
 		cleartoolDescribeFile(vscode.window.activeTextEditor);
 	}));
 
