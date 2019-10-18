@@ -133,7 +133,7 @@ function cleartoolDescribeRealFile(realFilePath: String) {
 				setContextCriteria(FileState.CheckedOut);
 				fileState.text = `$(verified) Checked Out`;
 				cclog.appendLine(datePriorToNowRexExp(stdout.match(/(?<=checked out\s)(\S)*/)) + " co");
-				fileStatus.text = `$(git-branch) ` + datePriorToNowRexExp(stdout.match(/(?<=checked out\s)(\S)*/))
+				fileStatus.text = `$(git-branch) ` + datePriorToNowRexExp(stdout.match(/(?<=checked out\s)(\S)*/));
 			} else {
 				setContextCriteria(FileState.Locked);
 				fileState.text = `$(lock) Locked`;
