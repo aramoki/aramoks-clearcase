@@ -4,6 +4,7 @@ All notable changes to the "aramoks-black" extension will be documented in this 
 
 ## [Unreleased]
 
+- Prior time latest history info status bar text added
 - Symbolic File Support Added
 - Make element context visibility bug fixed
 - Information and Error notifications are now optional

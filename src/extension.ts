@@ -21,6 +21,7 @@ enum NotificationType {
 let cleartool = new ClearTool();
 let cclog: vscode.OutputChannel = vscode.window.createOutputChannel("Clearcase");
 let viewStatus: vscode.StatusBarItem;
+let fileState: vscode.StatusBarItem;
 let fileStatus: vscode.StatusBarItem;
 
 let options: InputBoxOptions = {
@@ -103,7 +104,7 @@ function realLocation(path: fs.PathLike, callback: (realFilePath: String) => voi
 			//callback("\"" + path.toString() + "\"");
 		}
 		if (stats.isSymbolicLink()) {
-			fileStatus.text = `$(repo-sync~spin) Symbolic Describe...`;
+			fileState.text = `$(repo-sync~spin) Symbolic Describe...`;
 			fs.readlink(path, (err: NodeJS.ErrnoException | null, linkstring: String) => {
 				callback("\"" + linkstring + "\"");
 			});
@@ -118,11 +119,11 @@ function cleartoolDescribeRealFile(realFilePath: String) {
 	let matches: RegExpMatchArray | null;
 	cleartool.run_command("describe", realFilePath, (exception, stderr) => {
 		setContextCriteria(FileState.Unknown);
-		fileStatus.text = `$(issue-reopened) Error`;
+		fileState.text = `$(issue-reopened) Error`;
 		viewStatus.text = `$(git-branch) No Version`;
 	}, (stderr) => {
 		setContextCriteria(FileState.Unknown);
-		fileStatus.text = `$(issue-reopened) Error`;
+		fileState.text = `$(issue-reopened) Error`;
 		viewStatus.text = `$(git-branch) No Version`;
 	}, (stdout) => {
 		if ((matches = stdout.match(/(?<=version:\s\\main\\).*/)) !== null) {
@@ -130,18 +131,20 @@ function cleartoolDescribeRealFile(realFilePath: String) {
 			viewStatus.text = `$(git-branch) ${fileVersion}`;
 			if (stdout.indexOf("CHECKEDOUT") !== -1) {
 				setContextCriteria(FileState.CheckedOut);
-				fileStatus.text = `$(verified) Checked Out`;
-				//time = "(?<=created\s)(\S)*";//unix time
+				fileState.text = `$(verified) Checked Out`;
+				cclog.appendLine(datePriorToNowRexExp(stdout.match(/(?<=checked out\s)(\S)*/)) + " co");
+				fileStatus.text = `$(git-branch) ` + datePriorToNowRexExp(stdout.match(/(?<=checked out\s)(\S)*/))
 			} else {
 				setContextCriteria(FileState.Locked);
-				fileStatus.text = `$(lock) Locked`;
-				//time = "(?<=checked out\s)(\S)*";//unix time
+				fileState.text = `$(lock) Locked`;
+				fileStatus.text = `$(git-branch) ` + datePriorToNowRexExp(stdout.match(/(?<=created\s)(\S)*(?=,|\+)/));
 			}
 		} else {
 			setContextCriteria(FileState.Private);
 			viewStatus.text = `$(git-branch) No Version`;
-			fileStatus.text = `$(file-code) Private File`;
-			//time = "(?<=Modified:\s).*";//file time
+			fileState.text = `$(file-code) Private File`;
+			fileStatus.text = `$(git-branch) ` + datePriorToNowRexExp(stdout.match(/(?<=Modified:\s).*/));
+			cclog.appendLine(datePriorToNowRexExp(stdout.match(/(?<=Modified:\s).*/))  + " ");
 		}
 	});
 }
@@ -149,7 +152,7 @@ function cleartoolDescribeRealFile(realFilePath: String) {
 function cleartoolDescribeFile(textEditor: vscode.TextEditor | undefined) {
 
 	if (textEditor && textEditor.document.uri.toString().startsWith("file:")) {
-		fileStatus.text = `$(repo-sync~spin) Describe...`;
+		fileState.text = `$(repo-sync~spin) Describe...`;
 		realLocation(textEditor.document.fileName, (realFilePath: String) => {
 			cleartoolDescribeRealFile(realFilePath);
 		});
@@ -177,34 +180,62 @@ function showCommentDialog(callback: (val: String) => void) {
 		return;
 	}
 }
-//return interface!
-function datePriorToNow(now: Date): String {
-	let date = new Date();
-	date.setTime(date.getTime() - now.getTime());
-
-	if (date.getMonth() > 0) {
-		return date.getMonth() + " Months ago";
-	} else if (date.getDay() > 0) {
-		return date.getDay() + " Days ago";
-	} else if (date.getMinutes() > 0) {
-		return date.getMinutes() + " Hours ago";
-	} else {
-		return "Now";
+function datePriorToNowRexExp(now:RegExpMatchArray|null): string{
+	if(now){
+		return datePriorToNow(new Date(now[0].toString()));
+	}else{
+		return ' -- ';
 	}
 }
 
+function datePriorToNowString(now:string): string{
+	if(now){
+		return datePriorToNow(new Date(now));
+	}else{
+		return ' --- ';
+	}
+}
+
+function datePriorToNow(now: Date): string {
+	let dateTime:number = ((new Date()).valueOf() - now.valueOf());
+	var msPerMinute = 60 * 1000;
+	var msPerHour = msPerMinute * 60;
+	var msPerDay = msPerHour * 24;
+	var msPerMonth = msPerDay * 30;
+	var msPerYear = msPerDay * 365;
+
+
+	if (dateTime < msPerMinute) {
+		return Math.round(dateTime/1000) + ' seconds ago';   
+	}else if (dateTime < msPerHour) {
+		return Math.round(dateTime/msPerMinute) + ' minutes ago';   
+	}else if (dateTime < msPerDay ) {
+		return Math.round(dateTime/msPerHour ) + ' hours ago';   
+	}else if (dateTime < msPerMonth) {
+		return '~' + Math.round(dateTime/msPerDay) + ' days ago';   
+	}else if (dateTime < msPerYear) {
+        return '~' + Math.round(dateTime/msPerMonth) + ' months ago';   
+    }else {
+        return '~' + Math.round(dateTime/msPerYear ) + ' years ago';   
+    }
+}
+
 export function activate(context: vscode.ExtensionContext) {
-
-
-	context.subscriptions.push(viewStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1));
+	context.subscriptions.push(viewStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 2));
 	viewStatus.tooltip = "Version info of current element";
 	viewStatus.text = `$(repo-sync~spin) Activating Cleartool...`;
 	viewStatus.show();
 
-	context.subscriptions.push(fileStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0));
-	fileStatus.command = "extension.describe";
-	fileStatus.tooltip = "Refresh File Status";
+	context.subscriptions.push(fileStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1));
+	//fileState.command = "extension.describe";//will be history
+	
+	fileStatus.tooltip = "Click for Full History";
 	fileStatus.show();
+
+	context.subscriptions.push(fileState = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0));
+	fileState.command = "extension.describe";
+	fileState.tooltip = "Refresh File Status";
+	fileState.show();
 
 
 	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor((textEditor: vscode.TextEditor | undefined): void => {
@@ -212,7 +243,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('extension.checkin', (uri: vscode.Uri) => {
-		fileStatus.text = `$(repo-sync~spin) Checking In...`;
+		fileState.text = `$(repo-sync~spin) Checking In...`;
 		realLocation(uri.fsPath, (realFilePath: String) => {
 			showCommentDialog((param: String) => {
 				cleartool.run_command("ci " + param, realFilePath, (exception, stderr) => {
@@ -228,7 +259,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('extension.checkout', (uri: vscode.Uri) => {
-		fileStatus.text = `$(repo-sync~spin) Checking Out...`;
+		fileState.text = `$(repo-sync~spin) Checking Out...`;
 		realLocation(uri.fsPath, (realFilePath: String) => {
 			showCommentDialog((param: String) => {
 				cleartool.run_command("co " + param, realFilePath, (exception, stderr) => {
@@ -244,7 +275,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('extension.undocheckout', (uri: vscode.Uri) => {
-		fileStatus.text = `$(repo-sync~spin) Undo Check Out...`;
+		fileState.text = `$(repo-sync~spin) Undo Check Out...`;
 		realLocation(uri.fsPath, (realFilePath: String) => {
 			cleartool.run_command("unco -rm", realFilePath, (exception, stderr) => {
 				showMessage(stderr, NotificationType.Error);
@@ -258,7 +289,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('extension.makeelement', (uri: vscode.Uri) => {
-		fileStatus.text = `$(repo-sync~spin) Creating Element...`;
+		fileState.text = `$(repo-sync~spin) Creating Element...`;
 		realLocation(uri.fsPath, (realFilePath: String) => {
 			showCommentDialog((param: String) => {
 				cleartool.run_command("mkelem " + param, realFilePath, (exception, stderr) => {
@@ -274,7 +305,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('extension.describe', () => {
-		fileStatus.text = `$(repo-sync~spin) Initialise...`;
+		fileState.text = `$(repo-sync~spin) Initialise...`;
 		cleartoolDescribeFile(vscode.window.activeTextEditor);
 	}));
 
