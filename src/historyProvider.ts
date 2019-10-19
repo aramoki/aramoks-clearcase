@@ -47,13 +47,22 @@ export class HistoryProvider implements vscode.TreeDataProvider<Element>{
 			switch(element.collapsibleState){
 				case vscode.TreeItemCollapsibleState.Collapsed:
 				case vscode.TreeItemCollapsibleState.Expanded:
-					deps = deps.concat(this.fileHistory);
+					element.historyData.forEach(history => {
+						if(history.data.length > 0){
+							deps.push(new Element(history.title , history.sub , 'icon-tag' , history.data , vscode.TreeItemCollapsibleState.Collapsed));
+						}else{
+							deps.push(new Element(history.title , history.sub , 'icon-branch' , history.data , vscode.TreeItemCollapsibleState.None));
+						}
+					});
+					
 					break;
 				default:case vscode.TreeItemCollapsibleState.None:
 					break;
 			}
 		} else {
-			deps.push(new Element("Changes", " ", vscode.TreeItemCollapsibleState.Expanded));
+			deps.push(new Element("Changes", " ", 'cc_infinite' , this.historyData, vscode.TreeItemCollapsibleState.Expanded));
+			
+			
 		}
 		return Promise.resolve(deps);
 	}
@@ -67,10 +76,16 @@ export class Element extends vscode.TreeItem {
 	constructor(
 		public readonly label: string,
 		private version: string,
+		private icon:string,
+		public readonly historyData:HistoryData[],
 		public readonly collapsibleState: vscode.TreeItemCollapsibleState,
 		public readonly command?: vscode.Command
-	) {
+	){
 		super(label, collapsibleState);
+		this.iconPath = {
+			light: path.join(__filename, '..', '..', 'images', icon + '.svg'),
+			dark: path.join(__filename, '..', '..', 'images', icon + '.svg')
+		};
 	}
 
 	get tooltip(): string {
@@ -81,10 +96,6 @@ export class Element extends vscode.TreeItem {
 		return this.version;
 	}
 
-	iconPath = {
-		light: path.join(__filename, '..', '..', 'images', 'version_light.svg'),
-		dark: path.join(__filename, '..', '..', 'images', 'version_dark.svg')
-	};
 
 	contextValue = 'element';
 
