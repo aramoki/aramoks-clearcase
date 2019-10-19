@@ -40,6 +40,23 @@
 	],
 	"main": "./out/extension.js",
 	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "cleartool-view",
+					"title": "Cleartool",
+					"icon": "images/cc_history.svg"
+				}
+			]
+		},
+		"views": {
+			"cleartool-view": [
+				{
+					"id": "elementHistory",
+					"name": "History"
+				}
+			]
+		},
 		"configuration": {
 			"type": "object",
 			"title": "Aramok's Clearcase",
@@ -47,26 +64,61 @@
 				"cleartool.actionCommentOptionDialog": {
 					"type": "boolean",
 					"default": false,
-					"markdownDescription": "Show comment input after cleartool action"
+					"markdownDescription": "Show `comment input` after cleartool action"
 				},
 				"cleartool.actionPreserveFileModificationTime": {
 					"type": "boolean",
 					"default": false,
-					"markdownDescription": "Preserve file modification time after cleartool action"
+					"markdownDescription": "Preserve `file modification` time after cleartool action"
 				},
 				"cleartool.showErrorMessages": {
 					"type": "boolean",
 					"default": true,
-					"markdownDescription": "Show error message if cleartool action fails"
+					"markdownDescription": "Show `error` message if cleartool action fails"
 				},
 				"cleartool.showInformationMessages": {
 					"type": "boolean",
 					"default": true,
-					"markdownDescription": "Show information message for cleartool action"
+					"markdownDescription": "Show `information` message for cleartool action"
+				},
+				"cleartool.statusBarShowFileState": {
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Show `File State` info in Status bar"
+				},
+				"cleartool.statusBarShowFileInfo": {
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Show `File Status` info in Status bar"
+				},
+				"cleartool.statusBarShowViewStatus": {
+					"type": "boolean",
+					"default": true,
+					"markdownDescription": "Show `View Status` info in Status bar"
+				},
+				"cleartool.tlens": {
+					"type": "string",
+					"enum": [
+						"explorer",
+						"search",
+						"scm",
+						"debug",
+						"extensions"
+					],
+					"markdownDescription": "### Window configuration: View to show always when a window opens",
+					"scope": "window"
 				}
 			}
 		},
 		"commands": [
+			{
+				"command": "cleartool.refreshHistory",
+				"title": "Cleartool : Refresh History",
+				"icon": {
+					"light": "images/document.svg",
+					"dark": "images/document.svg"
+				}
+			},
 			{
 				"command": "extension.checkout",
 				"title": "Cleartool : Check-Out"
@@ -131,6 +183,20 @@
 					"command": "extension.makeelement",
 					"group": "Aramok's Commands",
 					"when": "mkelem-criteria"
+				}
+			],
+			"view/title": [
+				{
+					"command": "cleartool.refreshHistory",
+					"when": "view == elementHistory",
+					"group": "navigation"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "cleartool.refreshHistory",
+					"when": "view == elementHistory",
+					"group": "navigation"
 				}
 			]
 		}
