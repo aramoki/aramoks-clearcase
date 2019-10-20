@@ -211,6 +211,11 @@
 					"command": "extension.makeelement",
 					"group": "Aramok's Commands",
 					"when": "mkelem-criteria"
+				},
+				{
+					"command": "cleartool.compareWithPredecessor",
+					"group": "Aramok's Commands",
+					"when": "checkin-criteria || checkout-criteria"
 				}
 			],
 			"view/title": [
