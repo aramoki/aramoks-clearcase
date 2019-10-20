@@ -27,6 +27,7 @@ export interface HistoryData {
 	type:string;
 	time:string;
 	icon:string;
+	comment?:string;
 }
 
 let cleartool = new ClearTool();
@@ -283,6 +284,7 @@ export function activate(context: vscode.ExtensionContext) {
 			showMessage(stderr, NotificationType.Error);
 		}, (stdout) => {
 			var lines = stdout.split('\n');
+			let lastData: HistoryData;
 			lines.forEach(line => {
 				if (!line.startsWith('  ')) {
 					//(?<=@@\\|from\s)\S*(?="|\s) // match /main/
@@ -302,24 +304,24 @@ export function activate(context: vscode.ExtensionContext) {
 								let dataFound: HistoryData | undefined;
 								dataFound = seeker.find(data => data.version === version );
 								if (dataFound === undefined) {
-									let newone: HistoryData;
+									
 									if(operation ==='checkout'){
-										seeker.push(newone = { version: version , icon:'\u2713' , username:username, operation:operation, type:type , time:time, data: [] });
-										seeker = newone.data;
+										seeker.push(lastData = { version: version , icon:'\u2713' , username:username, operation:operation, type:type , time:time, data: [] });
+										seeker = lastData.data;
 									}else{
-										seeker.push(newone = { version: version , icon:'\u2937' , username:username , operation:operation, type:type , time:time, data: [] });
-										seeker = newone.data;
+										seeker.push(lastData = { version: version , icon:'\u2937' , username:username , operation:operation, type:type , time:time, data: [] });
+										seeker = lastData.data;
 									}
 								} else {
 									if (index === delimiter.length - 1) {
 										switch(type){
 											case 'version':
-												if(dataFound.operation === 'checkout'){//adds checkouted version info
-													seeker.push({ version: version , icon:'\u2937' , username:username , operation:operation, type:type , time:time, data: [] });
+												if(dataFound.operation === 'checkout'){
+													seeker.push(lastData = { version: version , icon:'\u2937' , username:username , operation:operation, type:type , time:time, data: [] });
 												}
 												break;
 											case 'branch':
-													dataFound.data.push({ version: version , icon:'\u002B' , username:username , operation:operation, type:type , time:time, data: [] });
+													dataFound.data.push(lastData = { version: version , icon:'\u002B' , username:username , operation:operation, type:type , time:time, data: [] });
 												break;
 										}
 									}
@@ -333,7 +335,8 @@ export function activate(context: vscode.ExtensionContext) {
 					} else {
 						cclog.appendLine(line);
 					}
-
+				}else{
+					lastData.comment = line;
 				}
 			});
 

@@ -5,35 +5,29 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { HistoryData } from './extension';
 
+
+enum TreeItemType{
+	Root , 
+	View , 
+	Element
+}
+
 export class HistoryProvider implements vscode.TreeDataProvider<Element>{
-	fileHistory : Element[];
-	historyData : HistoryData[];
+	historyData: HistoryData[];
 
 	private _onDidChangeTreeData: vscode.EventEmitter<Element | undefined> = new vscode.EventEmitter<Element | undefined>();
 	onDidChangeTreeData?: vscode.Event<Element | null | undefined> | undefined = this._onDidChangeTreeData.event;
 
 	constructor() {
-		this.fileHistory = [];
 		this.historyData = [];
 	}
-	
+
 	refresh(): void {
 		this._onDidChangeTreeData.fire();
 	}
 
-
-	fetchHistory(historyData:HistoryData[]):void {
-		this.fileHistory = [];
+	fetchHistory(historyData: HistoryData[]): void {
 		this.historyData = historyData;
-
-
-		//let data : RegExpMatchArray | null = historyData.match(/(?<=--)(\S)*/g);
-		/*if(data){	
-			data.forEach(element => {
-				this.fileHistory.push(new Element(element, "version", vscode.TreeItemCollapsibleState.None));
-			});
-		}*/
-
 		this._onDidChangeTreeData.fire();
 	}
 
@@ -42,27 +36,36 @@ export class HistoryProvider implements vscode.TreeDataProvider<Element>{
 	}
 
 	getChildren(element?: Element): Thenable<Element[]> {
-		let deps : Element[] = [];
+		let deps: Element[] = [];
 		if (element) {
-			switch(element.collapsibleState){
+			switch (element.collapsibleState) {
 				case vscode.TreeItemCollapsibleState.Collapsed:
 				case vscode.TreeItemCollapsibleState.Expanded:
 					element.historyData.forEach(history => {
-						if(history.data.length > 0){
-							deps.push(new Element(history.version , history.icon + ' ' + history.operation + " " + history.type + ' \u2022 ' + history.username + ' ' + history.time , 'icon-tag' , history.data , vscode.TreeItemCollapsibleState.Collapsed));
-						}else{
-							deps.push(new Element(history.version , history.icon + ' ' + history.operation + " " + history.type + ' \u2022 ' + history.username + ' ' + history.time , 'icon-branch' , history.data , vscode.TreeItemCollapsibleState.None));
+						if (history.data.length > 0) {
+							deps.push(new Element(
+								history.version , 
+								history.icon + ' ' + history.operation + " " + history.type + ' \u2022 ' + history.username + ' ' + 
+								history.time + 
+								((history.comment)?'  \u2261' +history.comment:' ') , 
+								TreeItemType.View, history.data, vscode.TreeItemCollapsibleState.Collapsed));
+						} else {
+
+							
+							deps.push(new Element(
+								history.version , 
+								history.icon + ' ' + history.operation + " " + history.type + ' \u2022 ' + history.username + ' ' + 
+								history.time +
+								((history.comment)?'  \u2261' +history.comment:' ') , 
+								(history.type === 'branch')?TreeItemType.View:TreeItemType.Element, history.data, vscode.TreeItemCollapsibleState.None));
 						}
 					});
-					
 					break;
-				default:case vscode.TreeItemCollapsibleState.None:
+				default: case vscode.TreeItemCollapsibleState.None:
 					break;
 			}
 		} else {
-			deps.push(new Element("Changes", " ", 'cc_infinite' , this.historyData, vscode.TreeItemCollapsibleState.Expanded));
-			
-			
+			deps.push(new Element("Changes", " ", TreeItemType.Root, this.historyData, vscode.TreeItemCollapsibleState.Expanded));
 		}
 		return Promise.resolve(deps);
 	}
@@ -72,20 +75,43 @@ export class HistoryProvider implements vscode.TreeDataProvider<Element>{
 
 
 export class Element extends vscode.TreeItem {
-
 	constructor(
 		public readonly label: string,
 		private version: string,
-		private icon:string,
-		public readonly historyData:HistoryData[],
+		private treeItemType: TreeItemType,
+		public readonly historyData: HistoryData[],
 		public readonly collapsibleState: vscode.TreeItemCollapsibleState,
 		public readonly command?: vscode.Command
-	){
+	) {
 		super(label, collapsibleState);
-		this.iconPath = {
-			light: path.join(__filename, '..', '..', 'images', icon + '.svg'),
-			dark: path.join(__filename, '..', '..', 'images', icon + '.svg')
-		};
+
+		switch(treeItemType){
+				case TreeItemType.Root:
+					this.iconPath = {
+						light: path.join(__filename, '..', '..', 'images' , 'light' , 'icon-repo.svg'),
+						dark: path.join(__filename, '..', '..', 'images' , 'dark' , 'icon-repo.svg')
+					};
+					break;
+				case TreeItemType.View:
+					this.iconPath = {
+						light: path.join(__filename, '..', '..', 'images' , 'light' , 'icon-tag.svg'),
+						dark: path.join(__filename, '..', '..', 'images' , 'dark' , 'icon-tag.svg')
+					};
+					break;
+				case TreeItemType.Element:
+					this.iconPath = {
+						light: path.join(__filename, '..', '..', 'images' , 'light' , 'icon-element.svg'),
+						dark: path.join(__filename, '..', '..', 'images' , 'dark' , 'icon-element.svg')
+					};
+					break;
+				default:
+					this.iconPath = {
+						light: path.join(__filename, '..', '..', 'images' , 'light' , 'icon-repo.svg'),
+						dark: path.join(__filename, '..', '..', 'images' , 'dark' , 'icon-repo.svg')
+					};
+		}
+
+
 	}
 
 	get tooltip(): string {
