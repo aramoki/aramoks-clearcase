@@ -4,6 +4,8 @@ All notable changes to the "aramoks-black" extension will be documented in this 
 
 ## [Unreleased]
 
+- Username information Statusbar file status info added
+- History tree feature added
 - Prior time latest history info status bar text added
 - Symbolic File Support Added
 - Make element context visibility bug fixed

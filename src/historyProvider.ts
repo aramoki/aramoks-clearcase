@@ -6,9 +6,9 @@ import * as path from 'path';
 import { HistoryData } from './extension';
 
 
-enum TreeItemType{
-	Root , 
-	View , 
+enum TreeItemType {
+	Root,
+	View,
 	Element
 }
 
@@ -44,20 +44,21 @@ export class HistoryProvider implements vscode.TreeDataProvider<Element>{
 					element.historyData.forEach(history => {
 						if (history.data.length > 0) {
 							deps.push(new Element(
-								history.version , 
-								history.icon + ' ' + history.operation + " " + history.type + ' \u2022 ' + history.username + ' ' + 
-								history.time + 
-								((history.comment)?'  \u2261' +history.comment:' ') , 
-								TreeItemType.View, history.data, vscode.TreeItemCollapsibleState.Collapsed));
-						} else {
-
-							
-							deps.push(new Element(
-								history.version , 
-								history.icon + ' ' + history.operation + " " + history.type + ' \u2022 ' + history.username + ' ' + 
+								/*
+								history.icon + ' ' + history.operation + " " + history.type + ' \u2022 ' + history.username + ' ' +
 								history.time +
-								((history.comment)?'  \u2261' +history.comment:' ') , 
-								(history.type === 'branch')?TreeItemType.View:TreeItemType.Element, history.data, vscode.TreeItemCollapsibleState.None));
+								((history.comment) ? '  \u2261' + history.comment : ' ')
+								*/
+								history.version,
+								' ',
+								TreeItemType.View, history.data, vscode.TreeItemCollapsibleState.Expanded));
+						} else {
+							deps.push(new Element(
+								history.version,
+								history.icon + ' ' + history.operation + " " + history.type + ' \u2022 ' + history.username + ' ' +
+								history.time +
+								((history.comment) ? '  \u2261' + history.comment : ' '),
+								(history.type === 'branch') ? TreeItemType.View : TreeItemType.Element, history.data, vscode.TreeItemCollapsibleState.None));
 						}
 					});
 					break;
@@ -65,7 +66,12 @@ export class HistoryProvider implements vscode.TreeDataProvider<Element>{
 					break;
 			}
 		} else {
-			deps.push(new Element("Changes", " ", TreeItemType.Root, this.historyData, vscode.TreeItemCollapsibleState.Expanded));
+			if (this.historyData.length > 0) {
+				deps.push(new Element("Changes", ' ', TreeItemType.Root, this.historyData, vscode.TreeItemCollapsibleState.Expanded));
+			} else {
+				deps.push(new Element("Changes", ' Click \u2193 to fetch history of current file', TreeItemType.Root, this.historyData, vscode.TreeItemCollapsibleState.None));
+			}
+
 		}
 		return Promise.resolve(deps);
 	}
@@ -85,30 +91,35 @@ export class Element extends vscode.TreeItem {
 	) {
 		super(label, collapsibleState);
 
-		switch(treeItemType){
-				case TreeItemType.Root:
-					this.iconPath = {
-						light: path.join(__filename, '..', '..', 'images' , 'light' , 'icon-repo.svg'),
-						dark: path.join(__filename, '..', '..', 'images' , 'dark' , 'icon-repo.svg')
-					};
-					break;
-				case TreeItemType.View:
-					this.iconPath = {
-						light: path.join(__filename, '..', '..', 'images' , 'light' , 'icon-tag.svg'),
-						dark: path.join(__filename, '..', '..', 'images' , 'dark' , 'icon-tag.svg')
-					};
-					break;
-				case TreeItemType.Element:
-					this.iconPath = {
-						light: path.join(__filename, '..', '..', 'images' , 'light' , 'icon-element.svg'),
-						dark: path.join(__filename, '..', '..', 'images' , 'dark' , 'icon-element.svg')
-					};
-					break;
-				default:
-					this.iconPath = {
-						light: path.join(__filename, '..', '..', 'images' , 'light' , 'icon-repo.svg'),
-						dark: path.join(__filename, '..', '..', 'images' , 'dark' , 'icon-repo.svg')
-					};
+		switch (treeItemType) {
+			case TreeItemType.Root:
+				this.iconPath = {
+					light: path.join(__filename, '..', '..', 'images', 'light', 'icon-repo.svg'),
+					dark: path.join(__filename, '..', '..', 'images', 'dark', 'icon-repo.svg')
+				};
+				this.contextValue = 'element.root';
+				break;
+			case TreeItemType.View:
+				this.iconPath = {
+					light: path.join(__filename, '..', '..', 'images', 'light', 'icon-tag.svg'),
+					dark: path.join(__filename, '..', '..', 'images', 'dark', 'icon-tag.svg')
+				};
+				this.contextValue = 'element.view';
+				break;
+			case TreeItemType.Element:
+				this.iconPath = {
+					light: path.join(__filename, '..', '..', 'images', 'light', 'icon-element.svg'),
+					dark: path.join(__filename, '..', '..', 'images', 'dark', 'icon-element.svg')
+				};
+				this.contextValue = 'element.element';
+				break;
+			default:
+				this.iconPath = {
+					light: path.join(__filename, '..', '..', 'images', 'light', 'icon-repo.svg'),
+					dark: path.join(__filename, '..', '..', 'images', 'dark', 'icon-repo.svg')
+				};
+				this.contextValue = 'element.none';
+				break;
 		}
 
 
@@ -123,6 +134,5 @@ export class Element extends vscode.TreeItem {
 	}
 
 
-	contextValue = 'element';
 
 }

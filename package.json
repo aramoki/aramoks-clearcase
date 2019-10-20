@@ -2,7 +2,7 @@
 	"name": "aramoks-clearcase",
 	"displayName": "Aramok's Clearcase",
 	"description": "IBM Rational Clearcase integration with Visual Studio Code",
-	"version": "1.0.18",
+	"version": "1.0.19",
 	"author": {
 		"name": "Sencer Aramok",
 		"email": "mohorame@gmail.com"
@@ -44,7 +44,7 @@
 			"activitybar": [
 				{
 					"id": "cleartool-view",
-					"title": "Cleartool",
+					"title": "Cleartool History",
 					"icon": "images/cc_history.svg"
 				}
 			]
@@ -115,13 +115,41 @@
 				"command": "cleartool.refreshHistory",
 				"title": "Cleartool : Refresh History",
 				"icon": {
-					"light": "images/document.svg",
-					"dark": "images/document.svg"
+					"light": "images/light/icon-pull.svg",
+					"dark": "images/dark/icon-pull.svg"
+				}
+			},
+			{
+				"command": "cleartool.compareWithPredecessor",
+				"title": "Cleartool : Compare with predecessor {Not Implemented!}",
+				"icon": {
+					"light": "images/light/icon-compare.svg",
+					"dark": "images/dark/icon-compare.svg"
+				}
+			},
+			{
+				"command": "cleartool.showHistory",
+				"title": "Cleartool : Show History",
+				"icon": {
+					"light": "images/light/icon-pull.svg",
+					"dark": "images/dark/icon-pull.svg"
+				}
+			},
+			{
+				"command": "cleartool.openVersion",
+				"title": "Cleartool : Open Version",
+				"icon": {
+					"light": "images/light/icon-go.svg",
+					"dark": "images/dark/icon-go.svg"
 				}
 			},
 			{
 				"command": "extension.checkout",
-				"title": "Cleartool : Check-Out"
+				"title": "Cleartool : Check-Out",
+				"icon": {
+					"light": "images/light/icon-pull.svg",
+					"dark": "images/dark/icon-pull.svg"
+				}
 			},
 			{
 				"command": "extension.checkin",
@@ -187,7 +215,11 @@
 			],
 			"view/title": [
 				{
-					"command": "cleartool.refreshHistory",
+					"command": "cleartool.showHistory",
+					"when": "view == elementHistory"
+				},
+				{
+					"command": "cleartool.showHistory",
 					"when": "view == elementHistory",
 					"group": "navigation"
 				}
@@ -197,6 +229,16 @@
 					"command": "cleartool.refreshHistory",
 					"when": "view == elementHistory",
 					"group": "navigation"
+				},
+				{
+					"command": "cleartool.compareWithPredecessor",
+					"when": "view == elementHistory && viewItem == element.element",
+					"group": "inline"
+				},
+				{
+					"command": "cleartool.openVersion",
+					"when": "view == elementHistory && viewItem ==  element.element",
+					"group": "inline "
 				}
 			]
 		}

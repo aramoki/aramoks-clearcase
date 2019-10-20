@@ -126,6 +126,80 @@ function realLocation(path: fs.PathLike, callback: (realFilePath: String) => voi
 	});
 }
 
+function cleartoolParseHistory(realFilePath: String, historyProvider: HistoryProvider) {
+	let datas: HistoryData[] = [];
+	cleartool.run_command("lshistory ", realFilePath, (exception, stderr) => {
+		showMessage(stderr, NotificationType.Error);
+	}, (stderr) => {
+		showMessage(stderr, NotificationType.Error);
+	}, (stdout) => {
+		var lines = stdout.split('\n');
+		let lastData: HistoryData;
+		lines.forEach(line => {
+			if (!line.startsWith('  ')) {
+				//(?<=@@\\|from\s)\S*(?="|\s) // match /main/
+				//(?<=@@\\)\S*(?=")
+				//(?<=@@\\|from\s\\)\S*(?=\s|")
+				let root: RegExpMatchArray | null = line.match(/(?<=@@\\|from\s\\)[\w|\\]*/);
+				let matches: RegExpMatchArray | null = line.split(/\s+/);
+				if (root) {
+					if (matches) {
+						let time: string = matches[0].toString();
+						let username: string = matches[1].toString();
+						let operation: string = matches[2].toString();
+						let type: string = matches[3].toString();
+						let delimiter: string[] = root.toString().split("\\");
+						let seeker: HistoryData[] = datas;
+						delimiter.forEach((version, index) => {
+							let dataFound: HistoryData | undefined;
+							dataFound = seeker.find(data => data.version === version);
+							if (dataFound === undefined) {
+								if (operation === 'checkout') {
+									seeker.push(lastData = { version: version, icon: '\u2713', username: username, operation: operation, type: type, time: time, data: [] });
+									seeker = lastData.data;
+								} else {
+									seeker.push(lastData = { version: version, icon: '\u2937', username: username, operation: operation, type: type, time: time, data: [] });
+									seeker = lastData.data;
+								}
+							} else {
+								if (index === delimiter.length - 1) {
+									switch (type) {
+										case 'version':
+											if (dataFound.operation === 'checkout') {
+												seeker.push(lastData = { version: version, icon: '\u2937', username: username, operation: operation, type: type, time: time, data: [] });
+											}
+											break;
+										case 'branch':
+											dataFound.data.push(lastData = { version: version, icon: '\u002B', username: username, operation: operation, type: type, time: time, data: [] });
+											break;
+									}
+								}
+								seeker = dataFound.data;
+							}
+						});
+						if (seeker && type === 'branch') {
+							//seeker.push({ version: delimiter[delimiter.length - 1] , username:username , operation:operation, type:type , time:time, data: [] });
+						}
+					}
+				} else {
+					let fname : RegExpMatchArray | null;
+					if(fname = line.match(/(?<="\.\\)\S*(?=@@")/)){
+						cclog.appendLine(line);
+						let time: string = matches[0].toString();
+						let username: string = matches[1].toString();
+						let operation: string = matches[2].toString() + ' ' + matches[3].toString();
+						let type: string = matches[4].toString();
+						datas.push(lastData = { version: fname.toString(), icon: '\u002B', username: username, operation: operation, type: type, time: time, data: [] });
+					}
+				}
+			} else {
+				lastData.comment = line;
+			}
+		});
+		historyProvider.fetchHistory(datas);
+	});
+}
+
 function cleartoolDescribeRealFile(realFilePath: String) {
 	let matches: RegExpMatchArray | null;
 
@@ -148,7 +222,7 @@ function cleartoolDescribeRealFile(realFilePath: String) {
 			viewStatus.text = `$(git-branch) ${matches.toString()}`;
 			if (stdout.indexOf("CHECKEDOUT") !== -1) {
 				setContextCriteria(FileState.CheckedOut);
-				
+
 				fileStatus.text = `$(history) ` + stdout.match(/(?<=\()\S*(?=\.)/) + datePriorToNowRexExp(stdout.match(/(?<=checked out\s)(\S)*/));
 				fileState.text = `$(verified) Checked Out`;
 			} else {
@@ -259,7 +333,7 @@ export function activate(context: vscode.ExtensionContext) {
 	viewStatus.text = `$(repo-sync~spin) Activating Cleartool...`;
 	viewStatus.show();
 	context.subscriptions.push(fileStatus = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 1));
-	//fileState.command = "extension.describe";//will be history
+	fileStatus.command = "cleartool.showHistory";
 	fileStatus.tooltip = "Click for Full History";
 	fileStatus.show();
 	context.subscriptions.push(fileState = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0));
@@ -270,85 +344,16 @@ export function activate(context: vscode.ExtensionContext) {
 
 
 
-
 	vscode.window.registerTreeDataProvider('elementHistory', historyProvider);
 	vscode.commands.registerCommand('cleartool.refreshHistory', () => historyProvider.refresh());
 
 
-
 	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor((textEditor: vscode.TextEditor | undefined): void => {
-		//cleartoolDescribeFile(textEditor);
 		if (textEditor && textEditor.document.uri.toString().startsWith("file:")) {
 			fileState.text = `$(repo-sync~spin) Describe...`;
 			realLocation(textEditor.document.fileName, (realFilePath: String) => {
 				cleartoolDescribeRealFile(realFilePath);
-
-				let datas: HistoryData[] = [];
-				cleartool.run_command("lshistory ", realFilePath, (exception, stderr) => {
-					showMessage(stderr, NotificationType.Error);
-				}, (stderr) => {
-					showMessage(stderr, NotificationType.Error);
-				}, (stdout) => {
-					var lines = stdout.split('\n');
-					let lastData: HistoryData;
-					lines.forEach(line => {
-						if (!line.startsWith('  ')) {
-							//(?<=@@\\|from\s)\S*(?="|\s) // match /main/
-							//(?<=@@\\)\S*(?=")
-							//(?<=@@\\|from\s\\)\S*(?=\s|")
-							let root: RegExpMatchArray | null = line.match(/(?<=@@\\|from\s\\)[\w|\\]*/);
-							if (root) {
-								let matches: RegExpMatchArray | null = line.split(/\s+/);
-								if (matches) {
-									let time: string = matches[0].toString();
-									let username: string = matches[1].toString();
-									let operation: string = matches[2].toString();
-									let type: string = matches[3].toString();
-									let delimiter: string[] = root.toString().split("\\");
-									let seeker: HistoryData[] = datas;
-									delimiter.forEach((version, index) => {
-										let dataFound: HistoryData | undefined;
-										dataFound = seeker.find(data => data.version === version);
-										if (dataFound === undefined) {
-
-											if (operation === 'checkout') {
-												seeker.push(lastData = { version: version, icon: '\u2713', username: username, operation: operation, type: type, time: time, data: [] });
-												seeker = lastData.data;
-											} else {
-												seeker.push(lastData = { version: version, icon: '\u2937', username: username, operation: operation, type: type, time: time, data: [] });
-												seeker = lastData.data;
-											}
-										} else {
-											if (index === delimiter.length - 1) {
-												switch (type) {
-													case 'version':
-														if (dataFound.operation === 'checkout') {
-															seeker.push(lastData = { version: version, icon: '\u2937', username: username, operation: operation, type: type, time: time, data: [] });
-														}
-														break;
-													case 'branch':
-														dataFound.data.push(lastData = { version: version, icon: '\u002B', username: username, operation: operation, type: type, time: time, data: [] });
-														break;
-												}
-											}
-											seeker = dataFound.data;
-										}
-									});
-									if (seeker && type === 'branch') {
-										//seeker.push({ version: delimiter[delimiter.length - 1] , username:username , operation:operation, type:type , time:time, data: [] });
-									}
-								}
-							} else {
-								cclog.appendLine(line);
-							}
-						} else {
-							lastData.comment = line;
-						}
-					});
-
-
-					historyProvider.fetchHistory(datas);
-				});
+				//cleartoolParseHistory(realFilePath, historyProvider);
 			});
 		} else {
 			setContextCriteria(FileState.Unknown);
@@ -358,6 +363,26 @@ export function activate(context: vscode.ExtensionContext) {
 		}
 
 	}));
+	
+
+
+	context.subscriptions.push(vscode.commands.registerCommand('cleartool.showHistory', () => {
+		if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri.toString().startsWith("file:")) {
+			let pre:string = fileStatus.text;
+			realLocation(vscode.window.activeTextEditor.document.fileName, (realFilePath: String) => {
+				fileStatus.text = `$(repo-sync~spin) Fetching History...`;
+				cleartoolParseHistory(realFilePath, historyProvider);
+				fileStatus.text = pre;
+			});
+		} else {
+			setContextCriteria(FileState.Unknown);
+			fileState.hide();
+			fileStatus.hide();
+			viewStatus.hide();
+		}
+	}));
+
+
 
 	context.subscriptions.push(vscode.commands.registerCommand('extension.checkin', (uri: vscode.Uri) => {
 		fileState.text = `$(repo-sync~spin) Checking In...`;
