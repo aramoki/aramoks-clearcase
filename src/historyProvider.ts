@@ -49,9 +49,9 @@ export class HistoryProvider implements vscode.TreeDataProvider<Element>{
 				case vscode.TreeItemCollapsibleState.Expanded:
 					element.historyData.forEach(history => {
 						if(history.data.length > 0){
-							deps.push(new Element(history.title , history.sub , 'icon-tag' , history.data , vscode.TreeItemCollapsibleState.Collapsed));
+							deps.push(new Element(history.version , history.icon + ' ' + history.operation + " " + history.type + ' \u2022 ' + history.username + ' ' + history.time , 'icon-tag' , history.data , vscode.TreeItemCollapsibleState.Collapsed));
 						}else{
-							deps.push(new Element(history.title , history.sub , 'icon-branch' , history.data , vscode.TreeItemCollapsibleState.None));
+							deps.push(new Element(history.version , history.icon + ' ' + history.operation + " " + history.type + ' \u2022 ' + history.username + ' ' + history.time , 'icon-branch' , history.data , vscode.TreeItemCollapsibleState.None));
 						}
 					});
 					

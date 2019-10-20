@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import { ClearTool } from "./cleartool";
 import { HistoryProvider } from "./historyProvider";
 import { InputBoxOptions } from 'vscode';
-import {HistoryData} from './extension';
+import { HistoryData } from './extension';
 
 enum FileState {
 	Locked,
@@ -19,10 +19,14 @@ enum NotificationType {
 }
 
 
-export interface HistoryData{
-	data:HistoryData[];
-	title:string;
-	sub:string;
+export interface HistoryData {
+	data: HistoryData[];
+	version: string;
+	username: string;
+	operation:string;
+	type:string;
+	time:string;
+	icon:string;
 }
 
 let cleartool = new ClearTool();
@@ -124,9 +128,9 @@ function realLocation(path: fs.PathLike, callback: (realFilePath: String) => voi
 function cleartoolDescribeRealFile(realFilePath: String) {
 	let matches: RegExpMatchArray | null;
 
-	checkConfigForStatusBar( fileState , 'statusBarShowFileState');
-	checkConfigForStatusBar( fileStatus , 'statusBarShowFileInfo');
-	checkConfigForStatusBar( viewStatus , 'statusBarShowViewStatus');
+	checkConfigForStatusBar(fileState, 'statusBarShowFileState');
+	checkConfigForStatusBar(fileStatus, 'statusBarShowFileInfo');
+	checkConfigForStatusBar(viewStatus, 'statusBarShowViewStatus');
 
 	cleartool.run_command("describe", realFilePath, (exception, stderr) => {
 		setContextCriteria(FileState.Unknown);
@@ -192,58 +196,58 @@ function showCommentDialog(callback: (val: String) => void) {
 	}
 }
 
-function datePriorToNowRexExp(now:RegExpMatchArray|null): string{
-	if(now){
+function datePriorToNowRexExp(now: RegExpMatchArray | null): string {
+	if (now) {
 		return datePriorToNow(new Date(now[0].toString()));
-	}else{
+	} else {
 		return ' -- ';
 	}
 }
 
-function datePriorToNowString(now:string): string{
-	if(now){
+function datePriorToNowString(now: string): string {
+	if (now) {
 		return datePriorToNow(new Date(now));
-	}else{
+	} else {
 		return ' --- ';
 	}
 }
 
 function datePriorToNow(now: Date): string {
-	let dateTime:number = ((new Date()).valueOf() - now.valueOf());
+	let dateTime: number = ((new Date()).valueOf() - now.valueOf());
 	var msPerMinute = 60 * 1000;
 	var msPerHour = msPerMinute * 60;
 	var msPerDay = msPerHour * 24;
 	var msPerMonth = msPerDay * 30;
 	var msPerYear = msPerDay * 365;
 	if (dateTime < msPerMinute) {
-		return Math.round(dateTime/1000) + ' seconds ago';   
-	}else if (dateTime < msPerHour) {
-		return Math.round(dateTime/msPerMinute) + ' minutes ago';   
-	}else if (dateTime < msPerDay ) {
-		return Math.round(dateTime/msPerHour ) + ' hours ago';   
-	}else if (dateTime < msPerMonth) {
-		return '~' + Math.round(dateTime/msPerDay) + ' days ago';   
-	}else if (dateTime < msPerYear) {
-        return '~' + Math.round(dateTime/msPerMonth) + ' months ago';   
-    }else {
-        return '~' + Math.round(dateTime/msPerYear ) + ' years ago';   
-    }
+		return Math.round(dateTime / 1000) + ' seconds ago';
+	} else if (dateTime < msPerHour) {
+		return Math.round(dateTime / msPerMinute) + ' minutes ago';
+	} else if (dateTime < msPerDay) {
+		return Math.round(dateTime / msPerHour) + ' hours ago';
+	} else if (dateTime < msPerMonth) {
+		return '~' + Math.round(dateTime / msPerDay) + ' days ago';
+	} else if (dateTime < msPerYear) {
+		return '~' + Math.round(dateTime / msPerMonth) + ' months ago';
+	} else {
+		return '~' + Math.round(dateTime / msPerYear) + ' years ago';
+	}
 }
 
-function checkConfigForStatusBar(item:vscode.StatusBarItem , config:string){
+function checkConfigForStatusBar(item: vscode.StatusBarItem, config: string) {
 	if (vscode.workspace.getConfiguration('cleartool').get(config)) {
 		item.show();
-	}else{
+	} else {
 		item.hide();
 	}
 }
-	function recPushJson(json:any, index:number, key:string[] , data:string):any {
-		if(index !== 0){
-			return recPushJson(json[key[index] + 's'] , index-1 , key ,data);
-		}else{
-			return data;
-		}
+function recPushJson(json: any, index: number, key: string[], data: string): any {
+	if (index !== 0) {
+		return recPushJson(json[key[index] + 's'], index - 1, key, data);
+	} else {
+		return data;
 	}
+}
 
 export function activate(context: vscode.ExtensionContext) {
 	const historyProvider = new HistoryProvider();
@@ -272,7 +276,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 	context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor((textEditor: vscode.TextEditor | undefined): void => {
 		cleartoolDescribeFile(textEditor);
-		let datas:HistoryData[] = [];
+		let datas: HistoryData[] = [];
 		cleartool.run_command("lshistory ", "asd", (exception, stderr) => {
 			showMessage(stderr, NotificationType.Error);
 		}, (stderr) => {
@@ -280,63 +284,76 @@ export function activate(context: vscode.ExtensionContext) {
 		}, (stdout) => {
 			var lines = stdout.split('\n');
 			lines.forEach(line => {
-				if(!line.startsWith('  ')){
-					var matches: RegExpMatchArray | null = line.split(/\s+/);
-					if(matches){
-						var time = matches[0];
-						var username = matches[1];
-						var operation = matches[2];
-						var type = matches[3];
-						//(?<=@@\\|from\s)\S*(?="|\s) // match /main/
-						//(?<=@@\\)\S*(?=")
-						//(?<=@@\\|from\s\\)\S*(?=\s|")
-						var root = line.match(/(?<=@@\\|from\s\\)[\w|\\]*/);
-						if(root){
-							let delimiter:string[] = root.toString().split("\\");
-							let seeker:HistoryData[] = datas;
-
-							delimiter.forEach((delim , index) => {
-								let dataFound:HistoryData|undefined;
-								dataFound = seeker.find(data => data.title === delim);
-								if(dataFound === undefined){
-									let newone:HistoryData;
-									seeker.push(newone = {title:delim , sub: '\u2937 ' + operation + " " + type + ' \u2022 ' + username + ' ' +  time, data:[]});
-									seeker = newone.data;
-								}else{
-									seeker = dataFound.data;
-									if(index === delimiter.length - 1){
-										//dataFound.sub += '\u21c4 ' + operation + " " + type + ' \u2022 ' + username + ' ' +  time;
-										dataFound.data.push({title:delim , sub: '\u2937 ' + operation + " " + type + ' \u2022 ' + username + ' ' +  time, data:[]});
+				if (!line.startsWith('  ')) {
+					//(?<=@@\\|from\s)\S*(?="|\s) // match /main/
+					//(?<=@@\\)\S*(?=")
+					//(?<=@@\\|from\s\\)\S*(?=\s|")
+					let root :RegExpMatchArray | null = line.match(/(?<=@@\\|from\s\\)[\w|\\]*/);
+					if (root) {
+						let matches: RegExpMatchArray | null = line.split(/\s+/);
+						if(matches){
+							let time: string = matches[0].toString();
+							let username: string = matches[1].toString();
+							let operation: string = matches[2].toString();
+							let type: string = matches[3].toString();
+							let delimiter: string[] = root.toString().split("\\");
+							let seeker: HistoryData[] = datas;
+							delimiter.forEach((version, index) => {
+								let dataFound: HistoryData | undefined;
+								dataFound = seeker.find(data => data.version === version );
+								if (dataFound === undefined) {
+									let newone: HistoryData;
+									if(operation ==='checkout'){
+										seeker.push(newone = { version: version , icon:'\u2713' , username:username, operation:operation, type:type , time:time, data: [] });
+										seeker = newone.data;
+									}else{
+										seeker.push(newone = { version: version , icon:'\u2937' , username:username , operation:operation, type:type , time:time, data: [] });
+										seeker = newone.data;
 									}
+								} else {
+									if (index === delimiter.length - 1) {
+										switch(type){
+											case 'version':
+												if(dataFound.operation === 'checkout'){//adds checkouted version info
+													seeker.push({ version: version , icon:'\u2937' , username:username , operation:operation, type:type , time:time, data: [] });
+												}
+												break;
+											case 'branch':
+													dataFound.data.push({ version: version , icon:'\u002B' , username:username , operation:operation, type:type , time:time, data: [] });
+												break;
+										}
+									}
+									seeker = dataFound.data;
 								}
 							});
-							if(seeker){
-								//seeker.push({title:operation + " " + type + " @" + username, sub: '\u2937 ' + operation + " " + type + ' \u2022 ' + username + ' \u21c4 ' +  time, data:[]});
+							if (seeker && type === 'branch') {
+								//seeker.push({ version: delimiter[delimiter.length - 1] , username:username , operation:operation, type:type , time:time, data: [] });
 							}
-						}else{
-							cclog.appendLine(line);
 						}
+					} else {
+						cclog.appendLine(line);
 					}
+
 				}
 			});
-			
-				/*
-				datas.forEach(element1 => {
-					cclog.appendLine(element1.title + " > ");
-					element1.data.forEach(element2 => {
-						cclog.appendLine("\t" + element2.title + " > ");
-						element2.data.forEach(element3 => {
-							cclog.appendLine("\t\t" + element3.title + " > ");
-							element3.data.forEach(element4 => {
-								cclog.appendLine("\t\t\t" + element4.title + " > ");
-								element4.data.forEach(element5 => {
-									cclog.appendLine("\t\t\t\t" + element5.title + " - ");
-								});
+
+			/*
+			datas.forEach(element1 => {
+				cclog.appendLine(element1.title + " > ");
+				element1.data.forEach(element2 => {
+					cclog.appendLine("\t" + element2.title + " > ");
+					element2.data.forEach(element3 => {
+						cclog.appendLine("\t\t" + element3.title + " > ");
+						element3.data.forEach(element4 => {
+							cclog.appendLine("\t\t\t" + element4.title + " > ");
+							element4.data.forEach(element5 => {
+								cclog.appendLine("\t\t\t\t" + element5.title + " - ");
 							});
 						});
 					});
 				});
-				*/
+			});
+			*/
 			historyProvider.fetchHistory(datas);
 		});
 
