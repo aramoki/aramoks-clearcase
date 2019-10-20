@@ -223,22 +223,25 @@ function cleartoolDescribeRealFile(realFilePath: String) {
 		fileStatus.hide();
 		viewStatus.text = `$(git-branch) No Version`;
 	}, (stdout) => {
+		//todo:fix regexp mathes with 'CHECKEDOUT' identifier
 		if ((matches = stdout.match(/(?<=@@\\main\\).*(?=")/)) !== null) {
 			viewStatus.text = `$(git-branch) ${matches.toString()}`;
+			let user:RegExpMatchArray | null = stdout.match(/(?<=\()\S*(?=\.)/);
+
 			if (stdout.indexOf("CHECKEDOUT") !== -1) {
 				setContextCriteria(FileState.CheckedOut);
 
-				fileStatus.text = `$(history) ` + stdout.match(/(?<=\()\S*(?=\.)/) + datePriorToNowRexExp(stdout.match(/(?<=checked out\s)(\S)*/));
+				fileStatus.text = `$(history) ` + ((user)?user.toString():' ') + datePriorToNowRexExp(stdout.match(/(?<=checked out\s)(\S)*/));
 				fileState.text = `$(verified) Checked Out`;
 			} else {
 				setContextCriteria(FileState.Locked);
-				fileStatus.text = `$(history) ` + stdout.match(/(?<=\()\S*(?=\.)/) + datePriorToNowRexExp(stdout.match(/(?<=created\s)(\S)*(?=,|\+)/));
+				fileStatus.text = `$(history) ` + ((user)?user.toString():' ') + datePriorToNowRexExp(stdout.match(/(?<=created\s)(\S)*(?=,|\+)/));
 				fileState.text = `$(lock) Locked`;
 			}
 		} else {
 			setContextCriteria(FileState.Private);
 			viewStatus.text = `$(git-branch) No Version`;
-			fileStatus.text = `$(history) ` + stdout.match(/(?<=\()\S*(?=\.)/) + datePriorToNowRexExp(stdout.match(/(?<=Modified:\s).*/));
+			fileStatus.text = `$(history) ` + ' \u23DA -- ' + datePriorToNowRexExp(stdout.match(/(?<=Modified:\s).*/));
 			fileState.text = `$(file-code) Private File`;
 		}
 	});
@@ -370,7 +373,7 @@ export function activate(context: vscode.ExtensionContext) {
 	}));
 	
 
-
+	//todo: clear current history immediatelly : further we cache those
 	context.subscriptions.push(vscode.commands.registerCommand('cleartool.showHistory', () => {
 		if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri.toString().startsWith("file:")) {
 			let pre:string = fileStatus.text;
