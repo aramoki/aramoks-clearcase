@@ -149,17 +149,17 @@ function cleartoolDescribeRealFile(realFilePath: String) {
 			if (stdout.indexOf("CHECKEDOUT") !== -1) {
 				setContextCriteria(FileState.CheckedOut);
 				
-				fileStatus.text = `$(git-branch) ` + stdout.match(/(?<=by\s).*(?=\s)/) + datePriorToNowRexExp(stdout.match(/(?<=checked out\s)(\S)*/));
+				fileStatus.text = `$(history) ` + stdout.match(/(?<=\()\S*(?=\.)/) + datePriorToNowRexExp(stdout.match(/(?<=checked out\s)(\S)*/));
 				fileState.text = `$(verified) Checked Out`;
 			} else {
 				setContextCriteria(FileState.Locked);
-				fileStatus.text = `$(git-branch) ` + stdout.match(/(?<=by\s).*(?=\s)/) + datePriorToNowRexExp(stdout.match(/(?<=created\s)(\S)*(?=,|\+)/));
+				fileStatus.text = `$(history) ` + stdout.match(/(?<=\()\S*(?=\.)/) + datePriorToNowRexExp(stdout.match(/(?<=created\s)(\S)*(?=,|\+)/));
 				fileState.text = `$(lock) Locked`;
 			}
 		} else {
 			setContextCriteria(FileState.Private);
 			viewStatus.text = `$(git-branch) No Version`;
-			fileStatus.text = `$(git-branch) ` + stdout.match(/(?<=by\s).*(?=\s)/) + datePriorToNowRexExp(stdout.match(/(?<=Modified:\s).*/));
+			fileStatus.text = `$(history) ` + stdout.match(/(?<=\()\S*(?=\.)/) + datePriorToNowRexExp(stdout.match(/(?<=Modified:\s).*/));
 			fileState.text = `$(file-code) Private File`;
 		}
 	});
@@ -222,17 +222,17 @@ function datePriorToNow(now: Date): string {
 	var msPerMonth = msPerDay * 30;
 	var msPerYear = msPerDay * 365;
 	if (dateTime < msPerMinute) {
-		return Math.round(dateTime / 1000) + ' seconds ago';
+		return ' ' + Math.round(dateTime / 1000) + ' seconds ago';
 	} else if (dateTime < msPerHour) {
-		return Math.round(dateTime / msPerMinute) + ' minutes ago';
+		return ' ' + Math.round(dateTime / msPerMinute) + ' minutes ago';
 	} else if (dateTime < msPerDay) {
-		return Math.round(dateTime / msPerHour) + ' hours ago';
+		return ' ' + Math.round(dateTime / msPerHour) + ' hours ago';
 	} else if (dateTime < msPerMonth) {
-		return '~' + Math.round(dateTime / msPerDay) + ' days ago';
+		return ' ~' + Math.round(dateTime / msPerDay) + ' days ago';
 	} else if (dateTime < msPerYear) {
-		return '~' + Math.round(dateTime / msPerMonth) + ' months ago';
+		return ' ~' + Math.round(dateTime / msPerMonth) + ' months ago';
 	} else {
-		return '~' + Math.round(dateTime / msPerYear) + ' years ago';
+		return ' ~' + Math.round(dateTime / msPerYear) + ' years ago';
 	}
 }
 
