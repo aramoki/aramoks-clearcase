@@ -4,6 +4,7 @@ All notable changes to the "aramoks-black" extension will be documented in this 
 
 ## [Unreleased]
 
+- Minor bug fix (Status bar info stuck)
 - Username information Statusbar file status info added
 - History tree feature added
 - Prior time latest history info status bar text added

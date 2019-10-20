@@ -111,18 +111,23 @@ function setContextCriteria(state: FileState) {
 
 function realLocation(path: fs.PathLike, callback: (realFilePath: String) => void) {
 	let realFile: String;
+	let pre : string;
 	fs.lstat(path, function (err, stats) {
 		if (err) {
 			//callback("\"" + path.toString() + "\"");
 		}
 		if (stats.isSymbolicLink()) {
+			pre = fileState.text;
 			fileState.text = `$(repo-sync~spin) Symbolic Describe...`;
 			fs.readlink(path, (err: NodeJS.ErrnoException | null, linkstring: String) => {
+				fileState.text = pre;
 				callback("\"" + linkstring + "\"");
 			});
 		} else {
+			fileState.text = pre;
 			callback("\"" + path.toString() + "\"");
 		}
+
 	});
 }
 
