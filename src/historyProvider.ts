@@ -3,8 +3,18 @@ import { exec, spawn, ChildProcess, ExecException } from 'child_process';
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { HistoryData } from './extension';
 
+
+export interface HistoryData {
+	data: HistoryData[];
+	version: string;
+	username: string;
+	operation: string;
+	type: string;
+	time: string;
+	icon: string;
+	comment?: string;
+}
 
 enum TreeItemType {
 	Root,
@@ -71,13 +81,10 @@ export class HistoryProvider implements vscode.TreeDataProvider<Element>{
 			} else {
 				deps.push(new Element("Changes", ' Click \u2193 to fetch history of current file', TreeItemType.Root, this.historyData, vscode.TreeItemCollapsibleState.None));
 			}
-
 		}
 		return Promise.resolve(deps);
 	}
 }
-
-
 
 
 export class Element extends vscode.TreeItem {
@@ -90,7 +97,6 @@ export class Element extends vscode.TreeItem {
 		public readonly command?: vscode.Command
 	) {
 		super(label, collapsibleState);
-
 		switch (treeItemType) {
 			case TreeItemType.Root:
 				this.iconPath = {
@@ -121,8 +127,6 @@ export class Element extends vscode.TreeItem {
 				this.contextValue = 'element.none';
 				break;
 		}
-
-
 	}
 
 	get tooltip(): string {
@@ -132,7 +136,4 @@ export class Element extends vscode.TreeItem {
 	get description(): string {
 		return this.version;
 	}
-
-
-
 }
