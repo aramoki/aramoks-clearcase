@@ -1,8 +1,8 @@
 'use strict';
 import { exec, spawn, ChildProcess, ExecException } from 'child_process';
 import * as vscode from 'vscode';
-import * as fs from 'fs';
 import * as path from 'path';
+import { Glyph } from './common';
 
 
 export interface HistoryData {
@@ -54,20 +54,13 @@ export class HistoryProvider implements vscode.TreeDataProvider<Element>{
 					element.historyData.forEach(history => {
 						if (history.data.length > 0) {
 							deps.push(new Element(
-								/*
-								history.icon + ' ' + history.operation + " " + history.type + ' \u2022 ' + history.username + ' ' +
-								history.time +
-								((history.comment) ? '  \u2261' + history.comment : ' ')
-								*/
-								history.version,
-								' ',
-								TreeItemType.View, history.data, vscode.TreeItemCollapsibleState.Expanded));
+								history.version, ' ', TreeItemType.View, history.data, vscode.TreeItemCollapsibleState.Expanded));
 						} else {
 							deps.push(new Element(
 								history.version,
-								history.icon + ' ' + history.operation + " " + history.type + ' \u2022 ' + history.username + ' ' +
+								history.icon + ' ' + history.operation + ' ' + history.type + ' ' + Glyph.Bullet + ' ' + history.username + ' ' +
 								history.time +
-								((history.comment) ? '  \u2261' + history.comment : ' '),
+								((history.comment) ? '  ' + Glyph.TripleLine + history.comment : ' '),
 								(history.type === 'branch') ? TreeItemType.View : TreeItemType.Element, history.data, vscode.TreeItemCollapsibleState.None));
 						}
 					});
@@ -79,7 +72,7 @@ export class HistoryProvider implements vscode.TreeDataProvider<Element>{
 			if (this.historyData.length > 0) {
 				deps.push(new Element("Changes", ' ', TreeItemType.Root, this.historyData, vscode.TreeItemCollapsibleState.Expanded));
 			} else {
-				deps.push(new Element("Changes", ' Click \u2193 to fetch history of current file', TreeItemType.Root, this.historyData, vscode.TreeItemCollapsibleState.None));
+				deps.push(new Element("Changes", ' Click ' + Glyph.DownwardsArrow + ' to fetch history of current file', TreeItemType.Root, this.historyData, vscode.TreeItemCollapsibleState.None));
 			}
 		}
 		return Promise.resolve(deps);

@@ -1,6 +1,5 @@
 import * as vscode from 'vscode';
 import { ClearTool } from "./cleartool";
-import * as ui from './userinterface';
 import { LogCat } from './logcat';
 
 
