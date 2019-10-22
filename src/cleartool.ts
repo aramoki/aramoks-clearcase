@@ -201,6 +201,9 @@ export class ClearTool {
 				ui.hideStatusBar();
 			}
 		}));
+		LogCat.getInstance().log('Aramok\'s Clearcase extension initialised');
+		//todo: get current view..
+		//todo cache cos ... then register scm
 	}
 
 

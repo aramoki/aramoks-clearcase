@@ -25,10 +25,15 @@ export class LogCat {
 		this.outputChannel = vscode.window.createOutputChannel("Clearcase");
 		this.date = new Date();
 		this.log('LogCat initialiseed');
+		this.focusChannel();
 	}
 
 	public log(message: string) {
 		this.outputChannel.appendLine(this.date.toUTCString() + '\t' + `${message}`);
+	}
+
+	public focusChannel(){
+		this.outputChannel.show();
 	}
 
 }
