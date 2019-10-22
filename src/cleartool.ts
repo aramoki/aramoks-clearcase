@@ -146,7 +146,8 @@ export class ClearTool {
 
 	private runCommand(command: CleartoolCommand, param: string | null, path: string): Promise<string> {
 		return new Promise((resolve, reject) => {
-			exec(this.tool + ' ' + command + ((param) ? ' ' + param + ' ' : '') + path, (error, stdout, stderr) => {
+			LogCat.getInstance().log(this.tool + ' ' + command + ((param) ? ' ' + param + ' ' : ' ') + path);
+			exec(this.tool + ' ' + command + ((param) ? ' ' + param + ' ' : ' ') + path, (error, stdout, stderr) => {
 				if (error) {
 					reject(error);
 				} else {
