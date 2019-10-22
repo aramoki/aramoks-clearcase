@@ -3,6 +3,16 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import { LogCat } from './logcat';
 
+export enum Glyph {
+	PlusSign = '\u002B',
+	ReturningArrow = '\u2937' ,
+	DownwardsArrow = '\u2193' ,
+	CheckMark = '\u2713' , 
+	Bullet = '\u2022' , 
+	TripleLine = '\u2261' , 
+	EarthGround = '\u23DA'
+}
+
 export function fetchRealLocation(path: fs.PathLike): Promise<string> {
 	return new Promise((resolve, reject) => {
 		let realFile: string;
@@ -15,7 +25,6 @@ export function fetchRealLocation(path: fs.PathLike): Promise<string> {
 					resolve('"' + linkstring + '"');
 				});
 			} else {
-				//ui.fileState.text = pre;
 				resolve('"' + path.toString() + '"');
 			}
 		});

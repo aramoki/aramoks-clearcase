@@ -5,36 +5,47 @@ import { HistoryProvider } from './historyProvider';
 import * as ui from './userinterface';
 import { LogCat } from './logcat';
 import * as config from './configuration';
-import * as common from './common';
+import {Glyph , fetchRealLocation , datePriorToNow} from './common';
 import { HistoryData } from './historyProvider';
 
+export enum CleartoolCommand {
+	CheckIn = 'ci',
+	CheckOut = 'co',
+	UndoCheckOut = 'unco',
+	MakeElement = 'mkelem',
+	Describe = 'describe',
+	ListHistory = 'lshist',
+	Differantiate = 'diff'
+}
 
 export class ClearTool {
-	tool: string;
-	historyProvider: HistoryProvider;
-	private actions: vscode.Disposable[];
+	private tool: string;
+	private historyProvider: HistoryProvider;
+	private disposables: vscode.Disposable[];
 
 	constructor() {
 		this.tool = "cleartool";
 		this.historyProvider = new HistoryProvider();
-		this.actions = [];
-
+		this.disposables = [];
 		ui.iniStatusBar();
+		this.initCleartool();
+	}
 
-		this.actions.push(vscode.commands.registerCommand('extension.describe', () => {
+	private initCleartool(){
+		this.disposables.push(vscode.commands.registerCommand('extension.describe', () => {
 			ui.progressStatusBar(ui.StatusBarItemType.FileState, `$(repo-sync~spin) Initialise...`);
-			this.DescribeFile(vscode.window.activeTextEditor);
+			this.describeFile(vscode.window.activeTextEditor);
 		}));
 
-		this.actions.push(vscode.commands.registerCommand('extension.makeelement', (uri: vscode.Uri) => {
+		this.disposables.push(vscode.commands.registerCommand('extension.makeelement', (uri: vscode.Uri) => {
 			ui.progressStatusBar(ui.StatusBarItemType.FileState, `$(repo-sync~spin) Creating Element...`);
-			common.fetchRealLocation(uri.fsPath)
+			fetchRealLocation(uri.fsPath)
 				.then((realFilePath: string) => {
-					ui.showCommentDialog((param: String) => {
-						this.runCommand('mkelem ' + param, realFilePath)
+					ui.showCommentDialog((param: string) => {
+						this.runCommand(CleartoolCommand.MakeElement, param, realFilePath)
 							.then((resolve: string) => {
 								ui.showMessage(resolve, ui.NotificationType.Information);
-								this.DescribeRealFile(realFilePath);
+								this.describeRealFile(realFilePath);
 							})
 							.catch((reject: string) => {
 								ui.showMessage(reject, ui.NotificationType.Error);
@@ -43,14 +54,14 @@ export class ClearTool {
 				}).catch(() => ui.hideStatusBar());
 		}));
 
-		this.actions.push(vscode.commands.registerCommand('extension.undocheckout', (uri: vscode.Uri) => {
+		this.disposables.push(vscode.commands.registerCommand('extension.undocheckout', (uri: vscode.Uri) => {
 			ui.progressStatusBar(ui.StatusBarItemType.FileState, `$(repo-sync~spin) Undo Check Out...`);
-			common.fetchRealLocation(uri.fsPath)
+			fetchRealLocation(uri.fsPath)
 				.then((realFilePath: string) => {
-					this.runCommand('unco -rm', realFilePath)
+					this.runCommand(CleartoolCommand.UndoCheckOut, '-rm', realFilePath)
 						.then((resolve: string) => {
 							ui.showMessage(resolve, ui.NotificationType.Information);
-							this.DescribeRealFile(realFilePath);
+							this.describeRealFile(realFilePath);
 						})
 						.catch((reject: string) => {
 							ui.showMessage(reject, ui.NotificationType.Error);
@@ -58,43 +69,43 @@ export class ClearTool {
 				}).catch(() => ui.hideStatusBar());
 		}));
 
-		this.actions.push(vscode.commands.registerCommand('extension.checkout', (uri: vscode.Uri) => {
+		this.disposables.push(vscode.commands.registerCommand('extension.checkout', (uri: vscode.Uri) => {
 			ui.progressStatusBar(ui.StatusBarItemType.FileState, `$(repo-sync~spin) Checking Out...`);
-			common.fetchRealLocation(uri.fsPath)
+			fetchRealLocation(uri.fsPath)
 				.then((realFilePath: string) => {
 					ui.showCommentDialog((param: string) => {
-						this.runCommand('co ' + param, realFilePath)
+						this.runCommand(CleartoolCommand.CheckOut, param, realFilePath)
 							.then((resolve: string) => {
 								ui.showMessage(resolve, ui.NotificationType.Error);
 							})
 							.catch((reject: string) => {
 								ui.showMessage(reject, ui.NotificationType.Information);
-								this.DescribeRealFile(realFilePath);
+								this.describeRealFile(realFilePath);
 							});
 					});
 				}).catch(() => ui.hideStatusBar());
 		}));
 
-		this.actions.push(vscode.commands.registerCommand('extension.checkin', (uri: vscode.Uri) => {
+		this.disposables.push(vscode.commands.registerCommand('extension.checkin', (uri: vscode.Uri) => {
 			ui.progressStatusBar(ui.StatusBarItemType.FileState, `$(repo-sync~spin) Checking In...`);
-			common.fetchRealLocation(uri.fsPath)
+			fetchRealLocation(uri.fsPath)
 				.then((realFilePath: string) => {
 					ui.showCommentDialog((param: string) => {
-						this.runCommand('ci ' + param, realFilePath)
+						this.runCommand(CleartoolCommand.CheckIn, param, realFilePath)
 							.then((resolve: string) => {
 								ui.showMessage(resolve, ui.NotificationType.Error);
 							})
 							.catch((reject: string) => {
 								ui.showMessage(reject, ui.NotificationType.Information);
-								this.DescribeRealFile(realFilePath);
+								this.describeRealFile(realFilePath);
 							});
 					});
 				}).catch(() => ui.hideStatusBar());
 		}));
 
-		this.actions.push(vscode.commands.registerCommand('cleartool.compareWithPredecessor', () => {
+		this.disposables.push(vscode.commands.registerCommand('cleartool.compareWithPredecessor', () => {
 			if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri.toString().startsWith("file:")) {
-				common.fetchRealLocation(vscode.window.activeTextEditor.document.fileName)
+				fetchRealLocation(vscode.window.activeTextEditor.document.fileName)
 					.then((realFilePath: string) => {
 						this.compareWithPredecessor(realFilePath, this.historyProvider);
 					}).catch(() => ui.hideStatusBar());
@@ -102,11 +113,11 @@ export class ClearTool {
 		}));
 
 		//todo: clear current history immediatelly : further we cache those
-		this.actions.push(vscode.commands.registerCommand('cleartool.showHistory', () => {
+		this.disposables.push(vscode.commands.registerCommand('cleartool.showHistory', () => {
 			if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri.toString().startsWith("file:")) {
-				common.fetchRealLocation(vscode.window.activeTextEditor.document.fileName)
+				fetchRealLocation(vscode.window.activeTextEditor.document.fileName)
 					.then((realFilePath: string) => {
-						this.ParseHistory(realFilePath, this.historyProvider);
+						this.parseHistory(realFilePath, this.historyProvider);
 					}).catch(() => ui.hideStatusBar());
 			} else {
 				ui.setContextCriteria(ui.FileState.Unknown);
@@ -114,32 +125,29 @@ export class ClearTool {
 			}
 		}));
 
-		this.actions.push(vscode.commands.registerCommand('cleartool.refreshHistory', () => this.historyProvider.refresh()));
+		this.disposables.push(vscode.commands.registerCommand('cleartool.refreshHistory', () => this.historyProvider.refresh()));
 
-		this.actions.push(vscode.window.registerTreeDataProvider('elementHistory', this.historyProvider));
+		this.disposables.push(vscode.window.registerTreeDataProvider('elementHistory', this.historyProvider));
 
-		this.actions.push(vscode.window.onDidChangeActiveTextEditor((textEditor: vscode.TextEditor | undefined): void => {
+		this.disposables.push(vscode.window.onDidChangeActiveTextEditor((textEditor: vscode.TextEditor | undefined): void => {
 			if (textEditor && textEditor.document.uri.toString().startsWith("file:")) {
 				ui.progressStatusBar(ui.StatusBarItemType.FileState, `$(repo-sync~spin) Describe...`);
-				common.fetchRealLocation(textEditor.document.fileName)
+				fetchRealLocation(textEditor.document.fileName)
 					.then((realFilePath: string) => {
-						this.DescribeRealFile(realFilePath);
+						this.describeRealFile(realFilePath);
 					}).catch(() => ui.hideStatusBar());
 			} else {
 				ui.setContextCriteria(ui.FileState.Unknown);
 				ui.hideStatusBar();
 			}
 		}));
-
 	}
 
-	getDisposables(): vscode.Disposable[] {
-		return this.actions;
-	}
 
-	runCommand(command: string, path: string): Promise<string> {
+	private runCommand(command: CleartoolCommand, param: string | null, path: string): Promise<string> {
 		return new Promise((resolve, reject) => {
-			exec(this.tool + " " + command + " " + path + "", (error, stdout, stderr) => {
+			LogCat.getInstance().log(this.tool + ' ' + command + ((param) ? ' ' + param + ' ' : ' ') + path);
+			exec(this.tool + ' ' + command + ((param) ? ' ' + param + ' ' : ' ') + path, (error, stdout, stderr) => {
 				if (error) {
 					reject(error);
 				} else {
@@ -153,22 +161,8 @@ export class ClearTool {
 		});
 	}
 
-	run_command(command: String, path: String, c_error: (exception: ExecException, val: String) => void, std_error: (val: string) => void, std_success: (val: string) => void): void {
-		exec(this.tool + " " + command + " " + path + "", (error, stdout, stderr) => {
-			if (error) {
-				c_error(error, stderr);
-				return;
-			}
-			if (stderr) {
-				std_error(stderr);
-			} else {
-				std_success(stdout);
-			}
-		});
-	}
-
-	compareWithPredecessor(realFilePath: string, historyProvider: HistoryProvider) {
-		this.runCommand('diff ', realFilePath)
+	private compareWithPredecessor(realFilePath: string, historyProvider: HistoryProvider) {
+		this.runCommand(CleartoolCommand.Differantiate, null, realFilePath)
 			.then((resolve: string) => {
 				LogCat.getInstance().log(resolve);
 				let clearcase: vscode.SourceControl = vscode.scm.createSourceControl('ClearCase', 'Clearcase');
@@ -188,11 +182,11 @@ export class ClearTool {
 			});
 	}
 
-	DescribeFile(textEditor: vscode.TextEditor | undefined) {
+	private describeFile(textEditor: vscode.TextEditor | undefined) {
 		if (textEditor && textEditor.document.uri.toString().startsWith("file:")) {
-			common.fetchRealLocation(textEditor.document.fileName)
+			fetchRealLocation(textEditor.document.fileName)
 				.then((realFilePath: string) => {
-					this.DescribeRealFile(realFilePath);
+					this.describeRealFile(realFilePath);
 				});
 		} else {
 			ui.setContextCriteria(ui.FileState.Unknown);
@@ -200,28 +194,29 @@ export class ClearTool {
 		}
 	}
 
-	DescribeRealFile(realFilePath: string) {
+	private describeRealFile(realFilePath: string) {
 		let matches: RegExpMatchArray | null;
-		this.runCommand('describe', realFilePath)
+		this.runCommand(CleartoolCommand.Describe, null, realFilePath)
 			.then((resolve: string) => {
 				//todo:fix regexp mathes with 'CHECKEDOUT' identifier
-				if ((matches = resolve.match(/(?<=@@\\main\\).*(?=")/)) !== null) {
-					let user: RegExpMatchArray | null = resolve.match(/(?<=\()\S*(?=\.)/);
-					if (resolve.indexOf("CHECKEDOUT") !== -1) {
+				let result:String = new String(resolve);
+				if ((matches = result.match(/(?<=@@\\main\\).*(?=")/)) !== null) {
+					let user: RegExpMatchArray | null = result.match(/(?<=\()\S*(?=\.)/);
+					if (result.indexOf("CHECKEDOUT") !== -1) {
 						ui.setContextCriteria(ui.FileState.CheckedOut);
 						ui.viewStatus.text = `$(git-branch) ${matches.toString()}`;
-						ui.fileStatus.text = `$(history) ` + ((user) ? user.toString() : ' ') + common.datePriorToNow(resolve.match(/(?<=checked out\s)(\S)*/));
+						ui.fileStatus.text = `$(history) ` + ((user) ? user.toString() : ' ') + datePriorToNow(result.match(/(?<=checked out\s)(\S)*/));
 						ui.fileState.text = `$(verified) Checked Out`;
 					} else {
 						ui.setContextCriteria(ui.FileState.Locked);
 						ui.viewStatus.text = `$(git-branch) ${matches.toString()}`;
-						ui.fileStatus.text = `$(history) ` + ((user) ? user.toString() : ' ') + common.datePriorToNow(resolve.match(/(?<=created\s)(\S)*(?=,|\+)/));
+						ui.fileStatus.text = `$(history) ` + ((user) ? user.toString() : ' ') + datePriorToNow(result.match(/(?<=created\s)(\S)*(?=,|\+)/));
 						ui.fileState.text = `$(lock) Locked`;
 					}
 				} else {
 					ui.setContextCriteria(ui.FileState.Private);
 					ui.viewStatus.text = `$(git-branch) No Version`;
-					ui.fileStatus.text = `$(history) ` + ' \u23DA -- ' + common.datePriorToNow(resolve.match(/(?<=Modified:\s).*/));
+					ui.fileStatus.text = `$(history) ` + ' ' + Glyph.EarthGround + ' -- ' + datePriorToNow(result.match(/(?<=Modified:\s).*/));
 					ui.fileState.text = `$(file-code) Private File`;
 				}
 			})
@@ -233,11 +228,12 @@ export class ClearTool {
 			});
 	}
 
-	ParseHistory(realFilePath: string, historyProvider: HistoryProvider) {
+	private parseHistory(realFilePath: string, historyProvider: HistoryProvider) {
 		let datas: HistoryData[] = [];
-		this.runCommand('lshistory ', realFilePath)
+		this.runCommand(CleartoolCommand.ListHistory, null, realFilePath)
 			.then((resolve: string) => {
-				var lines = resolve.split('\n');
+				let result:String = new String(resolve);
+				var lines = result.split('\n');
 				let lastData: HistoryData;
 				lines.forEach(line => {
 					if (!line.startsWith('  ')) {
@@ -261,7 +257,7 @@ export class ClearTool {
 										if (operation === 'checkout') {
 											seeker.push(lastData = {
 												version: version,
-												icon: '\u2713',
+												icon: Glyph.CheckMark,
 												username: username,
 												operation: operation,
 												type: type,
@@ -272,7 +268,7 @@ export class ClearTool {
 										} else {
 											seeker.push(lastData = {
 												version: version,
-												icon: '\u2937',
+												icon: Glyph.ReturningArrow,
 												username: username,
 												operation: operation,
 												type: type,
@@ -288,7 +284,7 @@ export class ClearTool {
 													if (dataFound.operation === 'checkout') {
 														seeker.push(lastData = {
 															version: version,
-															icon: '\u2937',
+															icon: Glyph.ReturningArrow,
 															username: username,
 															operation: operation,
 															type: type,
@@ -300,7 +296,7 @@ export class ClearTool {
 												case 'branch':
 													dataFound.data.push(lastData = {
 														version: version,
-														icon: '\u002B',
+														icon: Glyph.PlusSign,
 														username: username,
 														operation: operation,
 														type: type,
@@ -327,7 +323,7 @@ export class ClearTool {
 								let type: string = matches[4].toString();
 								datas.push(lastData = {
 									version: fname.toString(),
-									icon: '\u002B',
+									icon: Glyph.PlusSign,
 									username: username,
 									operation: operation,
 									type: type,
@@ -345,5 +341,10 @@ export class ClearTool {
 			.catch((reject: string) => {
 				ui.showMessage(reject, ui.NotificationType.Error);
 			});
+	}
+
+
+	public getDisposables(): vscode.Disposable []{
+		return this.disposables;
 	}
 }
