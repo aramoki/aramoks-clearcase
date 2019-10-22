@@ -3,12 +3,12 @@ import * as vscode from 'vscode';
 
 //todo:loglevel
 
-enum LogLevel{
-	Verbose , 
-	Debug , 
-	Warning , 
-	Error , 
-	Info ,
+enum LogLevel {
+	Verbose,
+	Debug,
+	Warning,
+	Error,
+	Info,
 	None
 }
 

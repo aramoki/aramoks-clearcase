@@ -4,8 +4,7 @@ import { exec, spawn, ChildProcess, ExecException } from 'child_process';
 import { HistoryProvider } from './historyProvider';
 import * as ui from './userinterface';
 import { LogCat } from './logcat';
-import * as config from './configuration';
-import {Glyph , fetchRealLocation , datePriorToNow} from './common';
+import { Glyph, fetchRealLocation, datePriorToNow } from './common';
 import { HistoryData } from './historyProvider';
 
 export enum CleartoolCommand {
@@ -31,7 +30,7 @@ export class ClearTool {
 		this.initCleartool();
 	}
 
-	private initCleartool(){
+	private initCleartool() {
 		this.disposables.push(vscode.commands.registerCommand('extension.describe', () => {
 			ui.progressStatusBar(ui.StatusBarItemType.FileState, `$(repo-sync~spin) Initialise...`);
 			this.describeFile(vscode.window.activeTextEditor);
@@ -76,11 +75,11 @@ export class ClearTool {
 					ui.showCommentDialog((param: string) => {
 						this.runCommand(CleartoolCommand.CheckOut, param, realFilePath)
 							.then((resolve: string) => {
-								ui.showMessage(resolve, ui.NotificationType.Error);
+								ui.showMessage(resolve, ui.NotificationType.Information);
+								this.describeRealFile(realFilePath);
 							})
 							.catch((reject: string) => {
-								ui.showMessage(reject, ui.NotificationType.Information);
-								this.describeRealFile(realFilePath);
+								ui.showMessage(reject, ui.NotificationType.Error);
 							});
 					});
 				}).catch(() => ui.hideStatusBar());
@@ -91,13 +90,14 @@ export class ClearTool {
 			fetchRealLocation(uri.fsPath)
 				.then((realFilePath: string) => {
 					ui.showCommentDialog((param: string) => {
-						this.runCommand(CleartoolCommand.CheckIn, param, realFilePath)
+						let ptime: string = (vscode.workspace.getConfiguration("cleartool").get("actionPreserveFileModificationTime")) ? ' –ptime' : '';
+						this.runCommand(CleartoolCommand.CheckIn, param + ptime, realFilePath)
 							.then((resolve: string) => {
-								ui.showMessage(resolve, ui.NotificationType.Error);
+								ui.showMessage(resolve, ui.NotificationType.Information);
+								this.describeRealFile(realFilePath);
 							})
 							.catch((reject: string) => {
-								ui.showMessage(reject, ui.NotificationType.Information);
-								this.describeRealFile(realFilePath);
+								ui.showMessage(reject, ui.NotificationType.Error);
 							});
 					});
 				}).catch(() => ui.hideStatusBar());
@@ -199,7 +199,7 @@ export class ClearTool {
 		this.runCommand(CleartoolCommand.Describe, null, realFilePath)
 			.then((resolve: string) => {
 				//todo:fix regexp mathes with 'CHECKEDOUT' identifier
-				let result:String = new String(resolve);
+				let result: String = new String(resolve);
 				if ((matches = result.match(/(?<=@@\\main\\).*(?=")/)) !== null) {
 					let user: RegExpMatchArray | null = result.match(/(?<=\()\S*(?=\.)/);
 					if (result.indexOf("CHECKEDOUT") !== -1) {
@@ -232,7 +232,7 @@ export class ClearTool {
 		let datas: HistoryData[] = [];
 		this.runCommand(CleartoolCommand.ListHistory, null, realFilePath)
 			.then((resolve: string) => {
-				let result:String = new String(resolve);
+				let result: String = new String(resolve);
 				var lines = result.split('\n');
 				let lastData: HistoryData;
 				lines.forEach(line => {
@@ -344,7 +344,7 @@ export class ClearTool {
 	}
 
 
-	public getDisposables(): vscode.Disposable []{
+	public getDisposables(): vscode.Disposable[] {
 		return this.disposables;
 	}
 }

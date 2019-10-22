@@ -69,7 +69,7 @@
 				"cleartool.actionPreserveFileModificationTime": {
 					"type": "boolean",
 					"default": false,
-					"markdownDescription": "Preserve `file modification` time after cleartool action"
+					"markdownDescription": "Preserve `file modification` time after cleartool action `check-in`"
 				},
 				"cleartool.showErrorMessages": {
 					"type": "boolean",

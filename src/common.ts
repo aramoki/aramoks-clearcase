@@ -5,11 +5,11 @@ import { LogCat } from './logcat';
 
 export enum Glyph {
 	PlusSign = '\u002B',
-	ReturningArrow = '\u2937' ,
-	DownwardsArrow = '\u2193' ,
-	CheckMark = '\u2713' , 
-	Bullet = '\u2022' , 
-	TripleLine = '\u2261' , 
+	ReturningArrow = '\u2937',
+	DownwardsArrow = '\u2193',
+	CheckMark = '\u2713',
+	Bullet = '\u2022',
+	TripleLine = '\u2261',
 	EarthGround = '\u23DA'
 }
 
@@ -34,7 +34,7 @@ export function fetchRealLocation(path: fs.PathLike): Promise<string> {
 
 export function datePriorToNow(date: Date | RegExpMatchArray | null): string {
 	if (date) {
-		if(date instanceof Date){
+		if (date instanceof Date) {
 			let dateTime: number = ((new Date()).valueOf() - date.valueOf());
 			var msPerMinute = 60 * 1000;
 			var msPerHour = msPerMinute * 60;
@@ -54,7 +54,7 @@ export function datePriorToNow(date: Date | RegExpMatchArray | null): string {
 			} else {
 				return ' ~' + Math.round(dateTime / msPerYear) + ' years ago';
 			}
-		}else{
+		} else {
 			return datePriorToNow(new Date(date[0].toString()));
 		}
 	} else {
