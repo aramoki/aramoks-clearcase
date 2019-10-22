@@ -148,7 +148,7 @@ export function showMessage(message: String, type: NotificationType) {
 		default: case NotificationType.Warning:
 			break;
 	}
-	LogCat.getInstance().log(`${message}`);
+	LogCat.getInstance().log(`Result: ${message}`);
 }
 
 export function showOpenSettings(type: String) {

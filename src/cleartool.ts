@@ -188,6 +188,7 @@ export class ClearTool {
 
 		this.disposables.push(vscode.window.onDidChangeActiveTextEditor((textEditor: vscode.TextEditor | undefined): void => {
 			if (textEditor && textEditor.document.uri.toString().startsWith("file:")) {
+				LogCat.getInstance().log('Active Editor Changed');
 				ui.progressStatusBar(ui.StatusBarItemType.FileState, 'Describe');
 				fetchRealLocation(textEditor.document.fileName)
 					.then((realFilePath: string) => {
@@ -205,7 +206,7 @@ export class ClearTool {
 
 	private runCommand(command: CleartoolCommand, param: string | null, path: string): Promise<string> {
 		return new Promise((resolve, reject) => {
-			LogCat.getInstance().log(this.tool + ' ' + command + ((param) ? ' ' + param + ' ' : ' ') + path);
+			LogCat.getInstance().log('execute : "' + this.tool + ' ' + command + ((param) ? ' ' + param + ' ' : ' ') + path + '"');
 			exec(this.tool + ' ' + command + ((param) ? ' ' + param + ' ' : ' ') + path, (error, stdout, stderr) => {
 				if (error) {
 					reject(error);
@@ -223,7 +224,6 @@ export class ClearTool {
 	private compareWithPredecessor(realFilePath: string, historyProvider: HistoryProvider) {
 		this.runCommand(CleartoolCommand.Differantiate, null, realFilePath)
 			.then((resolve: string) => {
-				LogCat.getInstance().log(resolve);
 				let clearcase: vscode.SourceControl = vscode.scm.createSourceControl('ClearCase', 'Clearcase');
 				let rg1: vscode.SourceControlResourceGroup = clearcase.createResourceGroup('ClearCase', 'CheckOuts (Reserved)');
 				let rg2: vscode.SourceControlResourceGroup = clearcase.createResourceGroup('ClearCase', 'CheckOuts (Unreserved)');
@@ -375,7 +375,7 @@ export class ClearTool {
 						} else {
 							let fname: RegExpMatchArray | null = line.match(/(?<="\.\\).*(?=@@")/);
 							if (fname) {
-								LogCat.getInstance().log(line + '' + fname.toString());
+								//todo: fix
 								let time: string = matches[0].toString();
 								let username: string = matches[1].toString();
 								let operation: string = matches[2].toString() + ' ' + matches[3].toString();

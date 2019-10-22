@@ -14,6 +14,7 @@ enum LogLevel {
 
 export class LogCat {
 	private static instance: LogCat;
+	private date: Date;
 	private outputChannel: vscode.OutputChannel;
 
 	static getInstance(): LogCat {
@@ -22,11 +23,12 @@ export class LogCat {
 
 	private constructor() {
 		this.outputChannel = vscode.window.createOutputChannel("Clearcase");
+		this.date = new Date();
 		this.log('LogCat initialiseed');
 	}
 
 	public log(message: string) {
-		this.outputChannel.appendLine(`${message}`);
+		this.outputChannel.appendLine(this.date.toUTCString() + '\t' + `${message}`);
 	}
 
 }
