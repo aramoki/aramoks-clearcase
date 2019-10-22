@@ -76,11 +76,11 @@ export class ClearTool {
 					ui.showCommentDialog((param: string) => {
 						this.runCommand(CleartoolCommand.CheckOut, param, realFilePath)
 							.then((resolve: string) => {
-								ui.showMessage(resolve, ui.NotificationType.Error);
+								ui.showMessage(resolve, ui.NotificationType.Information);
+								this.describeRealFile(realFilePath);
 							})
 							.catch((reject: string) => {
-								ui.showMessage(reject, ui.NotificationType.Information);
-								this.describeRealFile(realFilePath);
+								ui.showMessage(reject, ui.NotificationType.Error);
 							});
 					});
 				}).catch(() => ui.hideStatusBar());
@@ -90,14 +90,15 @@ export class ClearTool {
 			ui.progressStatusBar(ui.StatusBarItemType.FileState, `$(repo-sync~spin) Checking In...`);
 			fetchRealLocation(uri.fsPath)
 				.then((realFilePath: string) => {
-					ui.showCommentDialog((param: string) => {
-						this.runCommand(CleartoolCommand.CheckIn, param, realFilePath)
+					ui.showCommentDialog((param: string) => { 
+						let ptime:string = (vscode.workspace.getConfiguration("cleartool").get("actionPreserveFileModificationTime"))?' –ptime':'';
+						this.runCommand(CleartoolCommand.CheckIn, param + ptime, realFilePath)
 							.then((resolve: string) => {
-								ui.showMessage(resolve, ui.NotificationType.Error);
+								ui.showMessage(resolve, ui.NotificationType.Information);
+								this.describeRealFile(realFilePath);
 							})
 							.catch((reject: string) => {
-								ui.showMessage(reject, ui.NotificationType.Information);
-								this.describeRealFile(realFilePath);
+								ui.showMessage(reject, ui.NotificationType.Error);
 							});
 					});
 				}).catch(() => ui.hideStatusBar());
