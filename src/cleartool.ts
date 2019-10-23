@@ -18,6 +18,8 @@ export enum CleartoolCommand {
 	Differantiate = 'diff'
 }
 
+
+
 export class ClearTool {
 	private tool: string;
 	private historyProvider: HistoryProvider;
@@ -45,12 +47,17 @@ export class ClearTool {
 
 
 		let clearcase: vscode.SourceControl = vscode.scm.createSourceControl('ClearCase', 'Clearcase');
-		let rg1: vscode.SourceControlResourceGroup = clearcase.createResourceGroup('ClearCase', 'Checked-Out (Reserved)');
-		rg1.resourceStates = [
-			{ resourceUri: this.createResourceUri('README.md') },
-			{ resourceUri: this.createResourceUri('src/test/api.ts') }
-		  ];
-		
+		let checkoutgroup: vscode.SourceControlResourceGroup = clearcase.createResourceGroup('ClearCase', 'Checked-Out');
+		let groupData:vscode.SourceControlResourceState[] = checkoutgroup.resourceStates;
+		/*
+		checkoutgroup.resourceStates = [
+			{ resourceUri: this.createResourceUri('readme.md') },
+			{ resourceUri: this.createResourceUri('salben32i.md') }
+		];*/
+
+		//lsco
+		//(?<=checkout\sversion\s"\.\\).*(?=")
+
 		this.disposables.push(vscode.commands.registerCommand('extension.describe', () => {
 			ui.progressStatusBar(ui.StatusBarItemType.FileState, 'Initialise');
 			this.describeFile(vscode.window.activeTextEditor);
@@ -66,15 +73,13 @@ export class ClearTool {
 							progress.report({ increment: 20, message: "Execute..." });
 							this.runCommand(CleartoolCommand.MakeElement, param, realFilePath)
 								.then((resolve: string) => {
-									progress.report({ increment: 60, message: "Finishing..." });
+									progress.report({ increment: 30, message: "Finishing..." });
 									ui.showMessage(resolve, ui.NotificationType.Information);
-									this.describeRealFile(realFilePath);
-									finish();
+									this.describeRealFile(realFilePath , progress , finish);
 								})
 								.catch((reject: string) => {
 									progress.report({ increment: 60, message: "Finishing..." });
 									ui.showMessage(reject, ui.NotificationType.Error);
-									finish();
 								});
 						});
 					}).catch(() => {
@@ -94,10 +99,9 @@ export class ClearTool {
 							progress.report({ increment: 20, message: "Execute..." });
 							this.runCommand(CleartoolCommand.UndoCheckOut, param, realFilePath)
 								.then((resolve: string) => {
-									progress.report({ increment: 60, message: "Finishing..." });
+									progress.report({ increment: 30, message: "Finishing..." });
 									ui.showMessage(resolve, ui.NotificationType.Information);
-									this.describeRealFile(realFilePath);
-									finish();
+									this.describeRealFile(realFilePath , progress , finish);
 								})
 								.catch((reject: string) => {
 									progress.report({ increment: 60, message: "Finishing..." });
@@ -122,15 +126,13 @@ export class ClearTool {
 							progress.report({ increment: 20, message: "Execute..." });
 							this.runCommand(CleartoolCommand.CheckOut, param, realFilePath)
 								.then((resolve: string) => {
-									progress.report({ increment: 60, message: "Finishing..." });
+									progress.report({ increment: 30, message: "Finishing..." });
 									ui.showMessage(resolve, ui.NotificationType.Information);
-									this.describeRealFile(realFilePath);
-									finish();
+									this.describeRealFile(realFilePath , progress , finish);
 								})
 								.catch((reject: string) => {
 									progress.report({ increment: 60, message: "Finishing..." });
 									ui.showMessage(reject, ui.NotificationType.Error);
-									finish();
 								});
 						});
 					}).catch(() => {
@@ -151,15 +153,13 @@ export class ClearTool {
 							progress.report({ increment: 20, message: "Execute..." });
 							this.runCommand(CleartoolCommand.CheckIn, param + ptime, realFilePath)
 								.then((resolve: string) => {
-									progress.report({ increment: 60, message: "Finishing..." });
+									progress.report({ increment: 30, message: "Finishing..." });
 									ui.showMessage(resolve, ui.NotificationType.Information);
-									this.describeRealFile(realFilePath);
-									finish();
+									this.describeRealFile(realFilePath , progress , finish);
 								})
 								.catch((reject: string) => {
 									progress.report({ increment: 60, message: "Finishing..." });
 									ui.showMessage(reject, ui.NotificationType.Error);
-									finish();
 								});
 						});
 				}).catch(() => {
@@ -208,6 +208,10 @@ export class ClearTool {
 
 		this.disposables.push(vscode.window.onDidChangeActiveTextEditor((textEditor: vscode.TextEditor | undefined): void => {
 			if (textEditor && textEditor.document.uri.toString().startsWith("file:")) {
+
+				checkoutgroup.resourceStates.push({resourceUri:textEditor.document.uri});
+
+
 				LogCat.getInstance().log('Active Editor Changed');
 				ui.progressStatusBar(ui.StatusBarItemType.FileState, 'Describe');
 				fetchRealLocation(textEditor.document.fileName)
@@ -222,11 +226,22 @@ export class ClearTool {
 			}
 		}));
 		LogCat.getInstance().log('Aramok\'s Clearcase extension initialised');
-		//todo: get current view..
-		//todo cache cos ... then register scm
 	}
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+	
 	private runCommand(command: CleartoolCommand, param: string | null, path: string): Promise<string> {
 		return new Promise((resolve, reject) => {
 			LogCat.getInstance().log('execute : "' + this.tool + ' ' + command + ((param) ? ' ' + param + ' ' : ' ') + path + '"');
@@ -276,13 +291,16 @@ export class ClearTool {
 		}
 	}
 
-	private describeRealFile(realFilePath: string) {
+	private describeRealFile(realFilePath: string ,
+		progress?: vscode.Progress<{ message?: string | undefined; increment?: number | undefined; }>, finish?: () => void) {
 		let matches: RegExpMatchArray | null;
 		this.runCommand(CleartoolCommand.Describe, null, realFilePath)
 			.then((resolve: string) => {
+				if(progress){progress.report({message:'Command executed' , increment: 10});}
 				//todo:fix regexp mathes with 'CHECKEDOUT' identifier
 				let result: String = new String(resolve);
 				if ((matches = result.match(/(?<=@@\\main\\).*(?=")/)) !== null) {
+					if(progress){progress.report({message:'Command executed' , increment: 10});}
 					let user: RegExpMatchArray | null = result.match(/(?<=\()\S*(?=\.)/);
 					if (result.indexOf("CHECKEDOUT") !== -1) {
 						ui.setContextCriteria(ui.FileState.CheckedOut);
@@ -301,12 +319,16 @@ export class ClearTool {
 					ui.fileStatus.text = `$(history) ` + ' ' + Glyph.EarthGround + ' -- ' + datePriorToNow(result.match(/(?<=Modified:\s).*/));
 					ui.fileState.text = `$(file-code) Private File`;
 				}
+				if(progress){progress.report({message:'Showing Result...' , increment: 10});}
+				if(finish){finish();}
 			})
 			.catch((reject: string) => {
 				ui.setContextCriteria(ui.FileState.Unknown);
 				ui.fileState.text = `$(issue-reopened) Error`;
 				ui.fileStatus.hide();
 				ui.viewStatus.text = `$(git-branch) No Version`;
+				if(progress){progress.report({message:'Showing Result...' , increment: 30});}
+				if(finish){finish();}
 			});
 	}
 
