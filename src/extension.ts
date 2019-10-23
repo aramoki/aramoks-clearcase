@@ -13,8 +13,6 @@ export function activate(context: vscode.ExtensionContext) {
 	vscode.commands.executeCommand('extension.describe');
 }
 
-
-
 export function deactivate() {
 
 }

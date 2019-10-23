@@ -6,6 +6,7 @@ import * as ui from './userinterface';
 import { LogCat } from './logcat';
 import { Glyph, fetchRealLocation, datePriorToNow } from './common';
 import { HistoryData } from './historyProvider';
+import { join } from 'path';
 
 export enum CleartoolCommand {
 	CheckIn = 'ci',
@@ -30,7 +31,26 @@ export class ClearTool {
 		this.initCleartool();
 	}
 
+	createResourceUri(relativePath: string): vscode.Uri {
+		let absolutePath;
+		if(vscode.workspace.rootPath){
+			absolutePath = join(vscode.workspace.rootPath, relativePath);
+		}else{
+			absolutePath = '/';
+		}
+		return vscode.Uri.file(absolutePath);
+	}
+
 	private initCleartool() {
+
+
+		let clearcase: vscode.SourceControl = vscode.scm.createSourceControl('ClearCase', 'Clearcase');
+		let rg1: vscode.SourceControlResourceGroup = clearcase.createResourceGroup('ClearCase', 'Checked-Out (Reserved)');
+		rg1.resourceStates = [
+			{ resourceUri: this.createResourceUri('README.md') },
+			{ resourceUri: this.createResourceUri('src/test/api.ts') }
+		  ];
+		
 		this.disposables.push(vscode.commands.registerCommand('extension.describe', () => {
 			ui.progressStatusBar(ui.StatusBarItemType.FileState, 'Initialise');
 			this.describeFile(vscode.window.activeTextEditor);
