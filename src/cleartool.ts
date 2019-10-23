@@ -32,75 +32,121 @@ export class ClearTool {
 
 	private initCleartool() {
 		this.disposables.push(vscode.commands.registerCommand('extension.describe', () => {
-			ui.progressStatusBar(ui.StatusBarItemType.FileState, `$(repo-sync~spin) Initialise...`);
+			ui.progressStatusBar(ui.StatusBarItemType.FileState, 'Initialise');
 			this.describeFile(vscode.window.activeTextEditor);
 		}));
 
 		this.disposables.push(vscode.commands.registerCommand('extension.makeelement', (uri: vscode.Uri) => {
-			ui.progressStatusBar(ui.StatusBarItemType.FileState, `$(repo-sync~spin) Creating Element...`);
-			fetchRealLocation(uri.fsPath)
-				.then((realFilePath: string) => {
-					ui.showCommentDialog((param: string) => {
-						this.runCommand(CleartoolCommand.MakeElement, param, realFilePath)
-							.then((resolve: string) => {
-								ui.showMessage(resolve, ui.NotificationType.Information);
-								this.describeRealFile(realFilePath);
-							})
-							.catch((reject: string) => {
-								ui.showMessage(reject, ui.NotificationType.Error);
-							});
+			ui.progressStatusBar(ui.StatusBarItemType.FileState, 'Creating Element...', (progress,finish) => {
+				progress.report({ increment: 10, message: "Fetching file..." });
+				fetchRealLocation(uri.fsPath)
+					.then((realFilePath: string) => {
+						progress.report({ increment: 10, message: "Check configuration..." });
+						ui.showCommentDialog((param: string) => {
+							progress.report({ increment: 20, message: "Execute..." });
+							this.runCommand(CleartoolCommand.MakeElement, param, realFilePath)
+								.then((resolve: string) => {
+									progress.report({ increment: 60, message: "Finishing..." });
+									ui.showMessage(resolve, ui.NotificationType.Information);
+									this.describeRealFile(realFilePath);
+									finish();
+								})
+								.catch((reject: string) => {
+									progress.report({ increment: 60, message: "Finishing..." });
+									ui.showMessage(reject, ui.NotificationType.Error);
+									finish();
+								});
+						});
+					}).catch(() => {
+						ui.hideStatusBar();
+						finish();
 					});
-				}).catch(() => ui.hideStatusBar());
+			});
 		}));
 
 		this.disposables.push(vscode.commands.registerCommand('extension.undocheckout', (uri: vscode.Uri) => {
-			ui.progressStatusBar(ui.StatusBarItemType.FileState, `$(repo-sync~spin) Undo Check Out...`);
-			fetchRealLocation(uri.fsPath)
-				.then((realFilePath: string) => {
-					this.runCommand(CleartoolCommand.UndoCheckOut, '-rm', realFilePath)
-						.then((resolve: string) => {
-							ui.showMessage(resolve, ui.NotificationType.Information);
-							this.describeRealFile(realFilePath);
-						})
-						.catch((reject: string) => {
-							ui.showMessage(reject, ui.NotificationType.Error);
+			ui.progressStatusBar(ui.StatusBarItemType.FileState, 'Undo Check Out', (progress,finish) => {
+				progress.report({ increment: 10, message: "Fetching file..." });
+				fetchRealLocation(uri.fsPath)
+					.then((realFilePath: string) => {
+						progress.report({ increment: 10, message: "Check configuration..." });
+						ui.showUncoQuickPick((param: string) => {
+							progress.report({ increment: 20, message: "Execute..." });
+							this.runCommand(CleartoolCommand.UndoCheckOut, param, realFilePath)
+								.then((resolve: string) => {
+									progress.report({ increment: 60, message: "Finishing..." });
+									ui.showMessage(resolve, ui.NotificationType.Information);
+									this.describeRealFile(realFilePath);
+									finish();
+								})
+								.catch((reject: string) => {
+									progress.report({ increment: 60, message: "Finishing..." });
+									ui.showMessage(reject, ui.NotificationType.Error);
+									finish();
+								});
 						});
-				}).catch(() => ui.hideStatusBar());
+					}).catch(() => {
+						ui.hideStatusBar();
+						finish();
+					});
+			});
 		}));
 
 		this.disposables.push(vscode.commands.registerCommand('extension.checkout', (uri: vscode.Uri) => {
-			ui.progressStatusBar(ui.StatusBarItemType.FileState, `$(repo-sync~spin) Checking Out...`);
-			fetchRealLocation(uri.fsPath)
-				.then((realFilePath: string) => {
-					ui.showCommentDialog((param: string) => {
-						this.runCommand(CleartoolCommand.CheckOut, param, realFilePath)
-							.then((resolve: string) => {
-								ui.showMessage(resolve, ui.NotificationType.Information);
-								this.describeRealFile(realFilePath);
-							})
-							.catch((reject: string) => {
-								ui.showMessage(reject, ui.NotificationType.Error);
-							});
+			ui.progressStatusBar(ui.StatusBarItemType.FileState, 'Checking Out', (progress,finish) => {
+				progress.report({ increment: 10, message: "Fetching file..." });
+				fetchRealLocation(uri.fsPath)
+					.then((realFilePath: string) => {
+						progress.report({ increment: 10, message: "Check configuration..." });
+						ui.showCommentDialog((param: string) => {
+							progress.report({ increment: 20, message: "Execute..." });
+							this.runCommand(CleartoolCommand.CheckOut, param, realFilePath)
+								.then((resolve: string) => {
+									progress.report({ increment: 60, message: "Finishing..." });
+									ui.showMessage(resolve, ui.NotificationType.Information);
+									this.describeRealFile(realFilePath);
+									finish();
+								})
+								.catch((reject: string) => {
+									progress.report({ increment: 60, message: "Finishing..." });
+									ui.showMessage(reject, ui.NotificationType.Error);
+									finish();
+								});
+						});
+					}).catch(() => {
+						ui.hideStatusBar();
+						finish();
 					});
-				}).catch(() => ui.hideStatusBar());
+			});
 		}));
 
 		this.disposables.push(vscode.commands.registerCommand('extension.checkin', (uri: vscode.Uri) => {
-			ui.progressStatusBar(ui.StatusBarItemType.FileState, `$(repo-sync~spin) Checking In...`);
-			fetchRealLocation(uri.fsPath)
-				.then((realFilePath: string) => {
-					ui.showCommentDialog((param: string) => {
-						let ptime: string = (vscode.workspace.getConfiguration("cleartool").get("actionPreserveFileModificationTime")) ? ' –ptime' : '';
-						this.runCommand(CleartoolCommand.CheckIn, param + ptime, realFilePath)
-							.then((resolve: string) => {
-								ui.showMessage(resolve, ui.NotificationType.Information);
-								this.describeRealFile(realFilePath);
-							})
-							.catch((reject: string) => {
-								ui.showMessage(reject, ui.NotificationType.Error);
-							});
-					});
-				}).catch(() => ui.hideStatusBar());
+			ui.progressStatusBar(ui.StatusBarItemType.FileState, 'Checking In', (progress,finish) => {
+				progress.report({ increment: 10, message: "Fetching file..." });
+				fetchRealLocation(uri.fsPath)
+					.then((realFilePath: string) => {
+						ui.showCommentDialog((param: string) => {
+							progress.report({ increment: 10, message: "Check configuration..." });
+							let ptime: string = (vscode.workspace.getConfiguration("cleartool").get("actionPreserveFileModificationTime")) ? ' –ptime' : '';
+							progress.report({ increment: 20, message: "Execute..." });
+							this.runCommand(CleartoolCommand.CheckIn, param + ptime, realFilePath)
+								.then((resolve: string) => {
+									progress.report({ increment: 60, message: "Finishing..." });
+									ui.showMessage(resolve, ui.NotificationType.Information);
+									this.describeRealFile(realFilePath);
+									finish();
+								})
+								.catch((reject: string) => {
+									progress.report({ increment: 60, message: "Finishing..." });
+									ui.showMessage(reject, ui.NotificationType.Error);
+									finish();
+								});
+						});
+				}).catch(() => {
+					ui.hideStatusBar();
+					finish();
+				});
+			});
 		}));
 
 		this.disposables.push(vscode.commands.registerCommand('cleartool.compareWithPredecessor', () => {
@@ -114,15 +160,26 @@ export class ClearTool {
 
 		//todo: clear current history immediatelly : further we cache those
 		this.disposables.push(vscode.commands.registerCommand('cleartool.showHistory', () => {
-			if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri.toString().startsWith("file:")) {
-				fetchRealLocation(vscode.window.activeTextEditor.document.fileName)
-					.then((realFilePath: string) => {
-						this.parseHistory(realFilePath, this.historyProvider);
-					}).catch(() => ui.hideStatusBar());
-			} else {
-				ui.setContextCriteria(ui.FileState.Unknown);
-				ui.hideStatusBar();
-			}
+			ui.progressStatusBar(ui.StatusBarItemType.None, 'Show History', (progress, finish) => {
+				progress.report({ increment: 10, message: "Initialise History..." });
+				if (vscode.window.activeTextEditor && vscode.window.activeTextEditor.document.uri.toString().startsWith("file:")) {
+					progress.report({ increment: 10, message: "Fetching file..." });
+					fetchRealLocation(vscode.window.activeTextEditor.document.fileName)
+						.then((realFilePath: string) => {
+							progress.report({ increment: 20, message: "Parsing history..." });
+							this.parseHistory(realFilePath, this.historyProvider);
+							progress.report({ increment: 60, message: "Finishing..." });
+							finish();
+						}).catch(() => {
+							ui.hideStatusBar();
+							finish();
+						});
+				} else {
+					ui.setContextCriteria(ui.FileState.Unknown);
+					ui.hideStatusBar();
+					finish();
+				}
+			});
 		}));
 
 		this.disposables.push(vscode.commands.registerCommand('cleartool.refreshHistory', () => this.historyProvider.refresh()));
@@ -131,22 +188,28 @@ export class ClearTool {
 
 		this.disposables.push(vscode.window.onDidChangeActiveTextEditor((textEditor: vscode.TextEditor | undefined): void => {
 			if (textEditor && textEditor.document.uri.toString().startsWith("file:")) {
-				ui.progressStatusBar(ui.StatusBarItemType.FileState, `$(repo-sync~spin) Describe...`);
+				LogCat.getInstance().log('Active Editor Changed');
+				ui.progressStatusBar(ui.StatusBarItemType.FileState, 'Describe');
 				fetchRealLocation(textEditor.document.fileName)
 					.then((realFilePath: string) => {
 						this.describeRealFile(realFilePath);
-					}).catch(() => ui.hideStatusBar());
+					}).catch(() => {
+						ui.hideStatusBar();
+					});
 			} else {
 				ui.setContextCriteria(ui.FileState.Unknown);
 				ui.hideStatusBar();
 			}
 		}));
+		LogCat.getInstance().log('Aramok\'s Clearcase extension initialised');
+		//todo: get current view..
+		//todo cache cos ... then register scm
 	}
 
 
 	private runCommand(command: CleartoolCommand, param: string | null, path: string): Promise<string> {
 		return new Promise((resolve, reject) => {
-			LogCat.getInstance().log(this.tool + ' ' + command + ((param) ? ' ' + param + ' ' : ' ') + path);
+			LogCat.getInstance().log('execute : "' + this.tool + ' ' + command + ((param) ? ' ' + param + ' ' : ' ') + path + '"');
 			exec(this.tool + ' ' + command + ((param) ? ' ' + param + ' ' : ' ') + path, (error, stdout, stderr) => {
 				if (error) {
 					reject(error);
@@ -164,7 +227,6 @@ export class ClearTool {
 	private compareWithPredecessor(realFilePath: string, historyProvider: HistoryProvider) {
 		this.runCommand(CleartoolCommand.Differantiate, null, realFilePath)
 			.then((resolve: string) => {
-				LogCat.getInstance().log(resolve);
 				let clearcase: vscode.SourceControl = vscode.scm.createSourceControl('ClearCase', 'Clearcase');
 				let rg1: vscode.SourceControlResourceGroup = clearcase.createResourceGroup('ClearCase', 'CheckOuts (Reserved)');
 				let rg2: vscode.SourceControlResourceGroup = clearcase.createResourceGroup('ClearCase', 'CheckOuts (Unreserved)');
@@ -316,7 +378,7 @@ export class ClearTool {
 						} else {
 							let fname: RegExpMatchArray | null = line.match(/(?<="\.\\).*(?=@@")/);
 							if (fname) {
-								LogCat.getInstance().log(line + '' + fname.toString());
+								//todo: fix
 								let time: string = matches[0].toString();
 								let username: string = matches[1].toString();
 								let operation: string = matches[2].toString() + ' ' + matches[3].toString();

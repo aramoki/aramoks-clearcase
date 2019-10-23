@@ -22,9 +22,11 @@ export function fetchRealLocation(path: fs.PathLike): Promise<string> {
 			}
 			if (stats.isSymbolicLink()) {
 				fs.readlink(path, (err: NodeJS.ErrnoException | null, linkstring: string) => {
+					LogCat.getInstance().log('Symbolic File: ' + path);
 					resolve('"' + linkstring + '"');
 				});
 			} else {
+				LogCat.getInstance().log('File: ' + path);
 				resolve('"' + path.toString() + '"');
 			}
 		});

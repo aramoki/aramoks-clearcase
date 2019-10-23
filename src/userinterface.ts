@@ -19,7 +19,8 @@ export enum FileState {
 export enum StatusBarItemType {
 	ViewStatus,
 	FileStatus,
-	FileState
+	FileState,
+	None
 }
 
 export let viewStatus: vscode.StatusBarItem;
@@ -50,9 +51,18 @@ export function hideStatusBar() {
 	viewStatus.hide();
 }
 
-export function progressStatusBar(type: StatusBarItemType, progressText: string) {
-	let restore: string;
+interface Progression {
+	location: vscode.ProgressLocation.Notification;
+	title: String;
+	cancellable: boolean;
+}
 
+
+export function progressStatusBar(type: StatusBarItemType | undefined, progressText: string,
+	callback?: (progress: vscode.Progress<{ message?: string | undefined; increment?: number | undefined; }>, finish: () => void) => void,
+	) {
+
+	let restore: string;
 	config.checkConfigForStatusBar(fileState, 'statusBarShowFileState');
 	config.checkConfigForStatusBar(fileStatus, 'statusBarShowFileInfo');
 	config.checkConfigForStatusBar(viewStatus, 'statusBarShowViewStatus');
@@ -60,29 +70,54 @@ export function progressStatusBar(type: StatusBarItemType, progressText: string)
 	switch (type) {
 		case StatusBarItemType.ViewStatus:
 			restore = viewStatus.text;
-			viewStatus.text = progressText;
+			viewStatus.text = `$(repo-sync~spin) ` + progressText + '...';
 			break;
 		case StatusBarItemType.FileStatus:
 			restore = fileStatus.text;
-			fileStatus.text = progressText;
+			fileStatus.text = `$(repo-sync~spin) ` + progressText + '...';
 			break;
 		case StatusBarItemType.FileState:
 			restore = fileState.text;
-			fileState.text = progressText;
+			fileState.text = `$(repo-sync~spin) ` + progressText + '...';
+			break;
+		default:
 			break;
 	}
-	/*
-		return new Promise((resolve, reject) => {
-			//setTimeout(() => {
-				if (true) {
-					resolve(restore);
-				} else {
-					reject(new Error('It Broke'));
-				}
-			//, 1000);
+
+	//use restore with promose !keep your promises
+
+	let progressOptions: vscode.ProgressOptions = {
+		location: vscode.ProgressLocation.Notification,
+		title: progressText,
+		cancellable: false
+	};
+
+	if (callback) {
+		vscode.window.withProgress(progressOptions, (progress, token) => {
+			
+			var p = new Promise(resolve => {
+				callback(progress , resolve);
+			});
+			return p;
 		});
-	*/
+	}
 }
+
+
+/*
+if(finish){
+	finish(p = new Promise<void>);
+	return p;
+}else{
+	p = new Promise(resolve => {
+		setTimeout(() => {
+			resolve();
+		}, 15000);
+	});
+	return p;
+}
+*/
+
 
 export function showMessage(message: String, type: NotificationType) {
 	switch (type) {
@@ -113,7 +148,7 @@ export function showMessage(message: String, type: NotificationType) {
 		default: case NotificationType.Warning:
 			break;
 	}
-	LogCat.getInstance().log(`${message}`);
+	LogCat.getInstance().log(`Result: ${message}`);
 }
 
 export function showOpenSettings(type: String) {
@@ -168,5 +203,35 @@ export function showCommentDialog(callback: (val: string) => void) {
 		callback("-nc");
 		return;
 	}
+}
+
+export async function showUncoQuickPick(callback: (val: string) => void) {
+	let i = 0;
+	const result = await vscode.window.showQuickPick(['Yes', 'No'], {
+		placeHolder: 'Keep copy of your changes?'
+	});
+
+	switch (result) {
+		case 'Yes':
+			callback('-keep');
+			break;
+		default: case 'No':
+			callback('-rm');
+			break;
+	}
+}
+
+
+export async function showInputBox() {
+	const result = await vscode.window.showInputBox({
+		value: 'abcdef',
+		valueSelection: [2, 4],
+		placeHolder: 'For example: fedcba. But not: 123',
+		validateInput: text => {
+			vscode.window.showInformationMessage(`Validating: ${text}`);
+			return text === '123' ? 'Not 123!' : null;
+		}
+	});
+	vscode.window.showInformationMessage(`Got: ${result}`);
 }
 
